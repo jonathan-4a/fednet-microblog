@@ -67,3 +67,4 @@ export interface SearchUserOutput {
   isActive: boolean;
 }
 
+
