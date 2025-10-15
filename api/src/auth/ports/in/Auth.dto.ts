@@ -39,3 +39,4 @@ export interface GenerateInviteTokenOutput {
   created_at: number;
 }
 
+
