@@ -72,3 +72,4 @@ export interface UpdatePostInput {
   content: string;
 }
 
+
