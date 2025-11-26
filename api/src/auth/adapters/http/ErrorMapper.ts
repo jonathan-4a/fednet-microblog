@@ -9,3 +9,4 @@ export const errorCodeToStatus: Record<string, number> = {
   AUTH_INTERNAL_SERVER_ERROR: 500,
 };
 
+
