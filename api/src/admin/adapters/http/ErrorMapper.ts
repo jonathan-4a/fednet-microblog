@@ -12,3 +12,4 @@ export const errorCodeToStatus: Record<string, number> = {
   ADMIN_INTERNAL_SERVER_ERROR: 500,
 };
 
+
