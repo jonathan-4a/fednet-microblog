@@ -1,0 +1,60 @@
+services:
+  nginx:
+    image: nginx:alpine
+    ports:
+      - "80:80"
+    volumes:
+      - ./nginx.conf:/etc/nginx/nginx.conf
+    depends_on:
+      - instance1
+      - instance2
+      - instance3
+
+  instance1:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    image: microblog-built:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+      - DOMAIN=instance1
+      - PROTOCOL=http
+      - DB_PATH=/app/data/node1.db
+      - JWT_SECRET=change-me-in-production
+      - ADMIN_USER=admin1
+      - ADMIN_PASS=admin123
+    volumes:
+      - ./data/instance1:/app/data
+    command: bun run dist/server.js
+
+  instance2:
+    image: microblog-built:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+      - DOMAIN=instance2
+      - PROTOCOL=http
+      - DB_PATH=/app/data/node2.db
+      - JWT_SECRET=change-me-in-production
+      - ADMIN_USER=admin2
+      - ADMIN_PASS=admin123
+    volumes:
+      - ./data/instance2:/app/data
+    command: bun run dist/server.js
+
+  instance3:
+    image: microblog-built:latest
+    environment:
+      - NODE_ENV=production
+      - PORT=80
+      - DOMAIN=instance3
+      - PROTOCOL=http
+      - DB_PATH=/app/data/node3.db
+      - JWT_SECRET=change-me-in-production
+      - ADMIN_USER=admin3
+      - ADMIN_PASS=admin123
+    volumes:
+      - ./data/instance3:/app/data
+    command: bun run dist/server.js
+
