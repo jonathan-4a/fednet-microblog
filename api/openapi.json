@@ -1,0 +1,3008 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FedNet Microblog API",
+    "description": "A simple ActivityPub server for social media: users, follows, federation, and basic admin.",
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "User authentication and registration"
+    },
+    {
+      "name": "Users",
+      "description": "User profiles and account management"
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative endpoints for user and server management"
+    },
+    {
+      "name": "Federation",
+      "description": "ActivityPub federation endpoints for inter-server communication"
+    },
+    {
+      "name": "Socials",
+      "description": "Social graph and interactions (followers, following, liked)"
+    },
+    {
+      "name": "Posts",
+      "description": "ActivityPub endpoints for posts and post interactions (replies, likes, shares)"
+    }
+  ],
+  "paths": {
+    "/.well-known/webfinger": {
+      "get": {
+        "tags": [
+          "WebFinger"
+        ],
+        "summary": "WebFinger discovery",
+        "description": "Discover user information via WebFinger protocol",
+        "parameters": [
+          {
+            "name": "resource",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^acct:.+@.+$",
+              "example": "acct:alice@example.com"
+            },
+            "description": "Resource identifier in the format 'acct:username@domain'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebFinger resource descriptor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebFingerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid resource format or domain mismatch"
+          },
+          "404": {
+            "description": "User not found or inactive"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/u/{username}": {
+      "get": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Get Actor Profile",
+        "operationId": "getActorProfile",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor document",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Actor"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/inbox": {
+      "get": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Get user inbox",
+        "description": "Retrieve a user's inbox. Requires authentication - you can only view your own inbox. The authenticated user must match the username in the URL path.",
+        "operationId": "getInbox",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username of the actor. Must match the authenticated user."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inbox response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceholderResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Authentication required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - You can only view your own inbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 403
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "You can only view your own inbox"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Deliver activity to inbox (S2S)",
+        "description": "Receive an ActivityPub activity from another server (Server-to-Server). Requires HTTP signature verification. The request must include valid HTTP signature headers (Signature, Host, Date, Digest) signed with the sending actor's private key. The signature is verified against the actor's public key fetched from their actor document.",
+        "operationId": "postInbox",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username of the recipient actor"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/activity+json": {
+              "schema": {
+                "type": "object",
+                "description": "ActivityPub activity object (e.g., Follow, Accept, Create, etc.)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Activity accepted for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing HTTP signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid or missing HTTP signature"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/outbox": {
+      "get": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Preview outbox (placeholder)",
+        "operationId": "getOutboxPlaceholder",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Outbox placeholder response",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/PlaceholderResponse"
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Publish activity to outbox (C2S)",
+        "description": "Submit an ActivityPub activity to a user's outbox (Client-to-Server). Requires authentication - you can only post to your own outbox. The authenticated user must match the username in the URL path. Supported activity types include Follow, Create (for posts), Like, Announce, and Undo.",
+        "operationId": "postOutbox",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username of the actor. Must match the authenticated user."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/activity+json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "type",
+                  "actor",
+                  "object"
+                ],
+                "properties": {
+                  "@context": {
+                    "type": [
+                      "string",
+                      "array"
+                    ],
+                    "example": "https://www.w3.org/ns/activitystreams"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": [
+                      "Follow",
+                      "Create",
+                      "Like",
+                      "Announce",
+                      "Undo"
+                    ],
+                    "example": "Follow"
+                  },
+                  "actor": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Actor URL. Must match the authenticated user's actor URL.",
+                    "example": "http://localhost:3000/u/username"
+                  },
+                  "object": {
+                    "oneOf": [
+                      {
+                        "type": "string",
+                        "format": "uri"
+                      },
+                      {
+                        "type": "object"
+                      }
+                    ],
+                    "description": "Target object or actor URL for the activity",
+                    "example": "http://instance1:3000/u/targetuser"
+                  }
+                }
+              },
+              "example": {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "type": "Follow",
+                "actor": "http://localhost:3000/u/alice",
+                "object": "http://instance1:3000/u/bob"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Activity accepted for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid activity or missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 400
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Activity type is required"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 401
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "Missing authorization header"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - You can only post to your own outbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": {
+                      "type": "number",
+                      "example": 403
+                    },
+                    "message": {
+                      "type": "string",
+                      "example": "You can only post as yourself"
+                    }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/followers": {
+      "get": {
+        "tags": [
+          "Socials"
+        ],
+        "summary": "Get followers collection for a user",
+        "operationId": "getFollowers",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Followers collection",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowersCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/following": {
+      "get": {
+        "tags": [
+          "Socials"
+        ],
+        "summary": "Get following collection for a user",
+        "operationId": "getFollowing",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Following collection",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FollowingCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/liked": {
+      "get": {
+        "tags": [
+          "Socials"
+        ],
+        "summary": "Get liked objects collection for a user",
+        "operationId": "getLiked",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liked objects collection",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikedCollection"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get Post (Note)",
+        "description": "Returns the ActivityPub Note object for a specific post. Includes content, metadata, and links to replies, likes, and shares collections.",
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID or full note ID (e.g., 'abc123' or 'http://example.com/u/alice#abc123')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Note document",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Note"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/replies": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get Post Replies Collection",
+        "description": "Returns the Collection of replies to a post. The Discussion - returns reply object URLs.",
+        "operationId": "getPostReplies",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of reply URLs",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RepliesCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/likes": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get Post Likes Collection",
+        "description": "Returns the Collection of actors who liked the post. The Likers - returns actor URLs.",
+        "operationId": "getPostLikes",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of actor URLs who liked the post",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/LikesCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/shares": {
+      "get": {
+        "tags": [
+          "Posts"
+        ],
+        "summary": "Get Post Shares Collection",
+        "description": "Returns the Collection of actors who shared/reposted the post. The Boosters - returns actor URLs.",
+        "operationId": "getPostShares",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "default": 1
+            },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 100,
+              "default": 20
+            },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of actor URLs who shared the post",
+            "content": {
+              "application/activity+json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SharesCollection"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proxy": {
+      "get": {
+        "tags": [
+          "Federation"
+        ],
+        "summary": "Proxy remote federation resource",
+        "description": "Authenticated helper endpoint that asks this server to fetch a remote HTTP(S) resource (for example WebFinger documents, ActivityPub actors, followers collections, or posts) and returns the response back to the client. This avoids CORS issues and lets the server apply its own network and security policies.",
+        "operationId": "proxyRemoteResource",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "example": "https://remote.example/.well-known/webfinger?resource=acct:alice@remote.example"
+            },
+            "description": "Full HTTP(S) URL of the remote resource to fetch."
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "alice@remote.example"
+            },
+            "description": "Optional logical address/handle associated with the request. Forwarded as an X-Requested-Address header for observability."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful proxy response from remote server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Remote JSON body. Shape depends on the remote endpoint.",
+                  "additionalProperties": true
+                }
+              },
+              "application/activity+json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Remote ActivityStreams JSON body.",
+                  "additionalProperties": true
+                }
+              },
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Non-JSON responses are proxied as raw bytes with the original content type."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing url parameter, or unsupported protocol (only http:// and https:// are allowed)"
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad gateway - Remote server returned an error or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/auth/register": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Register a new local user",
+        "operationId": "registerUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "default": "alice",
+                    "description": "Unique local username used for login and ActivityPub address"
+                  },
+                  "password": {
+                    "type": "string",
+                    "default": "passw0rd!",
+                    "description": "Raw password; stored hashed server-side"
+                  },
+                  "displayName": {
+                    "type": "string",
+                    "default": "Alice A.",
+                    "description": "Optional display name shown in clients"
+                  },
+                  "summary": {
+                    "type": "string",
+                    "default": "Curious admin",
+                    "description": "Optional user bio/summary"
+                  },
+                  "inviteToken": {
+                    "type": "string",
+                    "description": "Required when the server is configured for invite-only registration"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "User created",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthRegisterResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing or invalid data"
+          },
+          "409": {
+            "description": "Username already exists"
+          },
+          "422": {
+            "description": "Invite token missing or invalid when invite-only registration is enabled"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/auth/login": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Authenticate and get a JWT",
+        "operationId": "loginUser",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "username": {
+                    "type": "string",
+                    "default": "alice",
+                    "description": "Existing username"
+                  },
+                  "password": {
+                    "type": "string",
+                    "default": "passw0rd!",
+                    "description": "User password"
+                  }
+                },
+                "required": [
+                  "username",
+                  "password"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Login successful, JWT issued",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AuthLoginResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Missing credentials"
+          },
+          "401": {
+            "description": "Invalid credentials or disabled account"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/auth/logout": {
+      "post": {
+        "tags": [
+          "Auth"
+        ],
+        "summary": "Logout and invalidate JWT token",
+        "operationId": "logoutUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Logout successful",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Logged out successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get admin dashboard overview",
+        "operationId": "getAdminDashboard",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all users with pagination and filters",
+        "operationId": "listAdminUsers",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Search by username"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "all",
+                "active",
+                "inactive"
+              ],
+              "default": "all"
+            },
+            "description": "Filter by user status"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "default": "created_at"
+            },
+            "description": "Sort field"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": [
+                "asc",
+                "desc"
+              ],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUsersListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get specific user details",
+        "operationId": "getAdminUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update a user (enable/disable)",
+        "operationId": "updateUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": [
+                  "is_active"
+                ],
+                "properties": {
+                  "is_active": {
+                    "type": "boolean",
+                    "description": "User active status"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserStatusResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid request body"
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Delete a user",
+        "operationId": "deleteUser",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Username to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "User deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "User not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/settings": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get current server settings",
+        "operationId": "getServerSettings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Settings data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminServerSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update server settings",
+        "operationId": "updateServerSettings",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "registration_mode": {
+                    "type": "string",
+                    "enum": [
+                      "open",
+                      "invite"
+                    ],
+                    "description": "Whether sign ups are open or require invitation"
+                  },
+                  "allow_public_peers": {
+                    "type": "boolean",
+                    "description": "Expose public peer list and allow others to discover this server"
+                  },
+                  "auto_fetch_peer_links": {
+                    "type": "boolean",
+                    "description": "Automatically fetch remote peer links that other servers share"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminServerSettings"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/posts": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all posts with pagination and filters",
+        "operationId": "listAdminPosts",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 1,
+              "minimum": 1
+            },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "authorUsername",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            },
+            "description": "Filter by author username"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Posts list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPostsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/posts/{id}": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Get specific post details",
+        "operationId": "getAdminPost",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPostSummary"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "Post not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Update a post",
+        "operationId": "updateAdminPost",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID to update"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Post content"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Post message"
+                  },
+                  "is_deleted": {
+                    "type": "boolean",
+                    "description": "Post deletion status"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Post updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "Post not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Delete a post",
+        "operationId": "deleteAdminPost",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Post GUID to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Post deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "404": {
+            "description": "Post not found"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/invites": {
+      "get": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "List all invite tokens",
+        "description": "Get a list of all invite tokens created on this server, including their status (unused, used, revoked).",
+        "operationId": "listInviteTokens",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "List of invite tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InviteTokenRecord"
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/admin/invites/{token}": {
+      "delete": {
+        "tags": [
+          "Admin"
+        ],
+        "summary": "Revoke an invite token",
+        "description": "Revoke an unused invite token. Cannot revoke tokens that are already used or already revoked.",
+        "operationId": "revokeInviteToken",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "The invite token to revoke"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token revoked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeInviteTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token not found, already used, or already revoked"
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token"
+          },
+          "403": {
+            "description": "Forbidden - Admin privileges required"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    },
+    "/api/users/me": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Get current user's profile",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Profile details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          }
+        }
+      },
+      "patch": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Update profile",
+        "description": "Update the current user's display name and/or summary.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Alice A."
+                  },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Building a friendly fediverse instance."
+                  },
+                  "isFollowingPublic": {
+                    "type": "boolean",
+                    "description": "Controls whether your following list is visible to others.",
+                    "default": true
+                  }
+                },
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/UserProfile"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid input"
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      },
+      "delete": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Delete current account",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "204": {
+            "description": "Account deleted"
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          },
+          "404": {
+            "description": "User not found"
+          }
+        }
+      }
+    },
+    "/api/users/me/invites": {
+      "post": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Generate an invite token",
+        "description": "Generate a new invite token. Only works when server registration mode is set to 'invite'.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "201": {
+            "description": "Invite token generated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InviteTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Registration mode is not 'invite'"
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          }
+        }
+      }
+    },
+    "/api/users/search": {
+      "get": {
+        "tags": [
+          "Users"
+        ],
+        "summary": "Search local users",
+        "description": "Search local users by partial username. Returns a limited set of fields. Requires authentication.",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string"
+            },
+            "description": "Partial username to search"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 20
+            },
+            "description": "Maximum number of results (default 5, max 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SearchUsersResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string"
+          }
+        }
+      },
+      "AuthRegisterResponse": {
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string",
+            "description": "Human readable summary of the registration result",
+            "example": "ok"
+          }
+        },
+        "required": [
+          "msg"
+        ]
+      },
+      "AuthLoginResponse": {
+        "type": "object",
+        "required": [
+          "token",
+          "user"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "JWT token for authenticated requests"
+          },
+          "user": {
+            "type": "object",
+            "required": [
+              "username",
+              "display_name",
+              "summary",
+              "is_admin",
+              "is_active"
+            ],
+            "properties": {
+              "username": {
+                "type": "string"
+              },
+              "display_name": {
+                "type": "string",
+                "nullable": true
+              },
+              "summary": {
+                "type": "string",
+                "nullable": true
+              },
+              "is_admin": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              },
+              "is_active": {
+                "type": "integer",
+                "enum": [
+                  0,
+                  1
+                ]
+              }
+            }
+          }
+        }
+      },
+      "AdminDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_users": {
+                "type": "integer"
+              },
+              "active_users": {
+                "type": "integer"
+              },
+              "inactive_users": {
+                "type": "integer"
+              },
+              "total_posts": {
+                "type": "integer"
+              }
+            }
+          },
+          "recent_activity": {
+            "type": "object",
+            "properties": {
+              "users": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdminUserSummary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AdminUserSummary": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string",
+            "description": "Full ActivityPub address (username@domain)"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminUsersListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserListItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "AdminUserListItem": {
+        "type": "object",
+        "properties": {
+          "username": {
+            "type": "string"
+          },
+          "address": {
+            "type": "string"
+          },
+          "display_name": {
+            "type": "string",
+            "nullable": true
+          },
+          "summary": {
+            "type": "string",
+            "nullable": true
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "is_active": {
+            "type": "boolean"
+          },
+          "is_admin": {
+            "type": "boolean"
+          },
+          "is_following_public": {
+            "type": "boolean",
+            "description": "Whether the user is following the public timeline"
+          },
+          "post_count": {
+            "type": "integer"
+          }
+        }
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AdminUserListItem"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPostSummary"
+            }
+          }
+        }
+      },
+      "AdminUserStatusResponse": {
+        "type": "object",
+        "properties": {
+          "msg": {
+            "type": "string"
+          },
+          "is_active": {
+            "type": "boolean"
+          }
+        }
+      },
+      "AdminPostSummary": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "type": "string",
+            "description": "Post GUID identifier"
+          },
+          "author_username": {
+            "type": "string",
+            "description": "Username of the post author"
+          },
+          "content": {
+            "type": "string",
+            "description": "Post content"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the post was created"
+          },
+          "raw_message": {
+            "type": "object",
+            "nullable": true,
+            "description": "Raw ActivityPub message object"
+          }
+        }
+      },
+      "AdminPostsListResponse": {
+        "type": "object",
+        "properties": {
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPostSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "AdminServerSettings": {
+        "type": "object",
+        "properties": {
+          "registration_mode": {
+            "type": "string",
+            "enum": [
+              "open",
+              "invite"
+            ]
+          },
+          "allow_public_peers": {
+            "type": "boolean"
+          },
+          "auto_fetch_peer_links": {
+            "type": "boolean"
+          }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": {
+            "type": "integer"
+          },
+          "limit": {
+            "type": "integer"
+          },
+          "total": {
+            "type": "integer"
+          },
+          "pages": {
+            "type": "integer"
+          }
+        }
+      },
+      "InviteTokenRecord": {
+        "type": "object",
+        "required": [
+          "token",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token"
+          },
+          "created_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who created this token"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unused",
+              "used",
+              "revoked"
+            ],
+            "description": "Current status of the token"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          },
+          "used_at": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Unix timestamp when the token was used, null if unused"
+          },
+          "used_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who used this token, null if unused"
+          }
+        }
+      },
+      "RevokeInviteTokenResponse": {
+        "type": "object",
+        "required": [
+          "success",
+          "message"
+        ],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the revocation was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message describing the result"
+          }
+        }
+      },
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "username",
+          "displayName",
+          "summary",
+          "isActive",
+          "isAdmin",
+          "isFollowingPublic",
+          "createdAt"
+        ],
+        "properties": {
+          "username": {
+            "type": "string",
+            "example": "alice"
+          },
+          "displayName": {
+            "type": "string",
+            "example": "Alice A."
+          },
+          "summary": {
+            "type": "string",
+            "example": "Profile bio that shows on the user page"
+          },
+          "isActive": {
+            "type": "boolean"
+          },
+          "isAdmin": {
+            "type": "boolean"
+          },
+          "isFollowingPublic": {
+            "type": "boolean"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp"
+          }
+        }
+      },
+      "InviteTokenResponse": {
+        "type": "object",
+        "required": [
+          "token",
+          "created_at"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token that can be used for registration",
+            "example": "a1b2c3d4e5f6..."
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          }
+        }
+      },
+      "InviteTokenDto": {
+        "type": "object",
+        "required": [
+          "token",
+          "status",
+          "created_at"
+        ],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token"
+          },
+          "status": {
+            "type": "string",
+            "enum": [
+              "unused",
+              "used",
+              "revoked"
+            ],
+            "description": "Current status of the token"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          },
+          "used_at": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Unix timestamp when the token was used, null if unused"
+          },
+          "used_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who used this token, null if unused"
+          }
+        }
+      },
+      "SearchUsersResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "username": {
+                  "type": "string"
+                },
+                "displayName": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "summary": {
+                  "type": "string",
+                  "nullable": true
+                },
+                "isActive": {
+                  "type": "boolean"
+                }
+              },
+              "required": [
+                "username",
+                "isActive"
+              ]
+            }
+          }
+        }
+      },
+      "WebFingerResponse": {
+        "type": "object",
+        "required": [
+          "subject",
+          "links"
+        ],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The resource identifier (acct:username@domain)",
+            "example": "acct:alice@example.com"
+          },
+          "links": {
+            "type": "array",
+            "description": "Array of links to related resources",
+            "items": {
+              "$ref": "#/components/schemas/WebFingerLink"
+            }
+          }
+        }
+      },
+      "WebFingerLink": {
+        "type": "object",
+        "required": [
+          "rel",
+          "type",
+          "href"
+        ],
+        "properties": {
+          "rel": {
+            "type": "string",
+            "description": "Link relation type",
+            "example": "self"
+          },
+          "type": {
+            "type": "string",
+            "description": "MIME type of the linked resource",
+            "example": "application/activity+json"
+          },
+          "href": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the linked resource (actor endpoint)",
+            "example": "https://example.com/u/alice"
+          }
+        }
+      },
+      "Actor": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": [
+              "array",
+              "string"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Person"
+            ]
+          },
+          "preferredUsername": {
+            "type": "string"
+          },
+          "name": {
+            "type": "string"
+          },
+          "summary": {
+            "type": "string"
+          },
+          "inbox": {
+            "type": "string",
+            "format": "uri"
+          },
+          "outbox": {
+            "type": "string",
+            "format": "uri"
+          },
+          "followers": {
+            "type": "string",
+            "format": "uri"
+          },
+          "following": {
+            "type": "string",
+            "format": "uri"
+          },
+          "liked": {
+            "type": "string",
+            "format": "uri"
+          },
+          "publicKey": {
+            "type": "object",
+            "properties": {
+              "id": {
+                "type": "string",
+                "format": "uri"
+              },
+              "owner": {
+                "type": "string",
+                "format": "uri"
+              },
+              "publicKeyPem": {
+                "type": "string"
+              }
+            },
+            "required": [
+              "id",
+              "owner",
+              "publicKeyPem"
+            ]
+          }
+        },
+        "required": [
+          "@context",
+          "id",
+          "type",
+          "preferredUsername",
+          "inbox",
+          "outbox",
+          "publicKey"
+        ]
+      },
+      "PlaceholderResponse": {
+        "type": "object",
+        "properties": {
+          "message": {
+            "type": "string"
+          },
+          "username": {
+            "type": "string"
+          }
+        }
+      },
+      "FollowersCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderedCollectionBase"
+          }
+        ]
+      },
+      "FollowingCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderedCollectionBase"
+          }
+        ]
+      },
+      "LikedCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/OrderedCollectionBase"
+          }
+        ]
+      },
+      "OrderedCollectionBase": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": [
+              "array",
+              "string"
+            ]
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollection"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "orderedItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": [
+          "type",
+          "id",
+          "totalItems"
+        ]
+      },
+      "Note": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": [
+              "array",
+              "string"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "Note"
+            ]
+          },
+          "published": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attributedTo": {
+            "type": "string",
+            "format": "uri"
+          },
+          "content": {
+            "type": "string"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "inReplyTo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "replies": {
+            "$ref": "#/components/schemas/RepliesCollectionReference"
+          },
+          "likes": {
+            "$ref": "#/components/schemas/LikesCollectionReference"
+          },
+          "shares": {
+            "$ref": "#/components/schemas/SharesCollectionReference"
+          }
+        },
+        "required": [
+          "@context",
+          "id",
+          "type",
+          "published",
+          "attributedTo",
+          "content",
+          "to",
+          "cc",
+          "url"
+        ]
+      },
+      "RepliesCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CollectionBase"
+          }
+        ]
+      },
+      "LikesCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CollectionBase"
+          }
+        ]
+      },
+      "SharesCollection": {
+        "allOf": [
+          {
+            "$ref": "#/components/schemas/CollectionBase"
+          }
+        ]
+      },
+      "RepliesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollection"
+            ]
+          },
+          "first": {
+            "$ref": "#/components/schemas/CollectionPage"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "LikesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollection"
+            ]
+          },
+          "totalItems": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "SharesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollection"
+            ]
+          },
+          "totalItems": {
+            "type": "integer"
+          }
+        },
+        "required": [
+          "id",
+          "type"
+        ]
+      },
+      "CollectionBase": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": [
+              "array",
+              "string"
+            ]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollection"
+            ]
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "first": {
+            "$ref": "#/components/schemas/CollectionPage"
+          }
+        },
+        "required": [
+          "@context",
+          "id",
+          "type",
+          "totalItems",
+          "first"
+        ]
+      },
+      "CollectionPage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "OrderedCollectionPage"
+            ]
+          },
+          "partOf": {
+            "type": "string",
+            "format": "uri"
+          },
+          "orderedItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        },
+        "required": [
+          "id",
+          "type",
+          "partOf",
+          "orderedItems"
+        ]
+      }
+    },
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /api/auth/login. Must be from an admin user."
+      }
+    }
+  }
+}

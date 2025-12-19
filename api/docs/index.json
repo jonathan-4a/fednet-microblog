@@ -1,0 +1,126 @@
+{
+  "openapi": "3.0.0",
+  "info": {
+    "title": "FedNet Microblog API",
+    "description": "A simple ActivityPub server for social media: users, follows, federation, and basic admin.",
+    "version": "1.0.0",
+    "license": {
+      "name": "MIT",
+      "url": "https://opensource.org/licenses/MIT"
+    }
+  },
+  "servers": [
+    {
+      "url": "http://localhost:3000",
+      "description": "Local development server"
+    }
+  ],
+  "tags": [
+    {
+      "name": "Auth",
+      "description": "User authentication and registration"
+    },
+    {
+      "name": "Users",
+      "description": "User profiles and account management"
+    },
+    {
+      "name": "Admin",
+      "description": "Administrative endpoints for user and server management"
+    },
+    {
+      "name": "Federation",
+      "description": "ActivityPub federation endpoints for inter-server communication"
+    },
+    {
+      "name": "Socials",
+      "description": "Social graph and interactions (followers, following, liked)"
+    },
+    {
+      "name": "Posts",
+      "description": "ActivityPub endpoints for posts and post interactions (replies, likes, shares)"
+    }
+  ],
+  "paths": {
+    "/.well-known/webfinger": {
+      "get": {
+        "$ref": "./webfinger.json#/paths/~1.well-known~1webfinger/get"
+      }
+    },
+    "/u/{username}": {
+      "get": {
+        "$ref": "./federation.json#/paths/~1u~1{username}/get"
+      }
+    },
+    "/u/{username}/inbox": {
+      "get": {
+        "$ref": "./federation.json#/paths/~1u~1{username}~1inbox/get"
+      },
+      "post": {
+        "$ref": "./federation.json#/paths/~1u~1{username}~1inbox/post"
+      }
+    },
+    "/u/{username}/outbox": {
+      "get": {
+        "$ref": "./federation.json#/paths/~1u~1{username}~1outbox/get"
+      },
+      "post": {
+        "$ref": "./federation.json#/paths/~1u~1{username}~1outbox/post"
+      }
+    },
+    "/u/{username}/followers": {
+      "get": {
+        "$ref": "./socials.json#/paths/~1u~1{username}~1followers/get"
+      }
+    },
+    "/u/{username}/following": {
+      "get": {
+        "$ref": "./socials.json#/paths/~1u~1{username}~1following/get"
+      }
+    },
+    "/u/{username}/liked": {
+      "get": {
+        "$ref": "./socials.json#/paths/~1u~1{username}~1liked/get"
+      }
+    },
+    "/u/{username}/statuses/{id}": {
+      "get": {
+        "$ref": "./posts.json#/paths/~1u~1{username}~1statuses~1{id}/get"
+      }
+    },
+    "/u/{username}/statuses/{id}/replies": {
+      "get": {
+        "$ref": "./posts.json#/paths/~1u~1{username}~1statuses~1{id}~1replies/get"
+      }
+    },
+    "/u/{username}/statuses/{id}/likes": {
+      "get": {
+        "$ref": "./posts.json#/paths/~1u~1{username}~1statuses~1{id}~1likes/get"
+      }
+    },
+    "/u/{username}/statuses/{id}/shares": {
+      "get": {
+        "$ref": "./posts.json#/paths/~1u~1{username}~1statuses~1{id}~1shares/get"
+      }
+    },
+    "/api/proxy": {
+      "get": {
+        "$ref": "./federation.json#/paths/~1api~1proxy/get"
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": {
+            "type": "string",
+            "description": "Error message"
+          }
+        }
+      }
+    }
+  }
+}
+
