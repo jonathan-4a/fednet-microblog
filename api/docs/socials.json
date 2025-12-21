@@ -1,0 +1,120 @@
+{
+  "paths": {
+    "/u/{username}/followers": {
+      "get": {
+        "tags": ["Socials"],
+        "summary": "Get followers collection for a user",
+        "operationId": "getFollowers",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Followers collection",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/FollowersCollection" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/following": {
+      "get": {
+        "tags": ["Socials"],
+        "summary": "Get following collection for a user",
+        "operationId": "getFollowing",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Following collection",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/FollowingCollection" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/liked": {
+      "get": {
+        "tags": ["Socials"],
+        "summary": "Get liked objects collection for a user",
+        "operationId": "getLiked",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Liked objects collection",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/LikedCollection" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "FollowersCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/OrderedCollectionBase" }]
+      },
+      "FollowingCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/OrderedCollectionBase" }]
+      },
+      "LikedCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/OrderedCollectionBase" }]
+      },
+      "OrderedCollectionBase": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": ["array", "string"]
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollection"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "orderedItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          }
+        },
+        "required": ["type", "id", "totalItems"]
+      }
+    }
+  }
+}
+

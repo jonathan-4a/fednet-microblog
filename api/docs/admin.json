@@ -1,0 +1,740 @@
+{
+  "paths": {
+    "/api/admin/dashboard": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get admin dashboard overview",
+        "operationId": "getAdminDashboard",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Dashboard data",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminDashboardResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/users": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all users with pagination and filters",
+        "operationId": "listAdminUsers",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "search",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Search by username"
+          },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["all", "active", "inactive"],
+              "default": "all"
+            },
+            "description": "Filter by user status"
+          },
+          {
+            "name": "sort",
+            "in": "query",
+            "schema": { "type": "string", "default": "created_at" },
+            "description": "Sort field"
+          },
+          {
+            "name": "order",
+            "in": "query",
+            "schema": {
+              "type": "string",
+              "enum": ["asc", "desc"],
+              "default": "desc"
+            },
+            "description": "Sort order"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Users list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUsersListResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/users/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get specific user details",
+        "operationId": "getAdminUser",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "User not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      },
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update a user (enable/disable)",
+        "operationId": "updateUser",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username to update"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "required": ["is_active"],
+                "properties": {
+                  "is_active": {
+                    "type": "boolean",
+                    "description": "User active status"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "User updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminUserStatusResponse"
+                }
+              }
+            }
+          },
+          "400": { "description": "Invalid request body" },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "User not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Delete a user",
+        "operationId": "deleteUser",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "User deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "User deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "User not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/settings": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get current server settings",
+        "operationId": "getServerSettings",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Settings data",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminServerSettings" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      },
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update server settings",
+        "operationId": "updateServerSettings",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "registration_mode": {
+                    "type": "string",
+                    "enum": ["open", "invite"],
+                    "description": "Whether sign ups are open or require invitation"
+                  },
+                  "allow_public_peers": {
+                    "type": "boolean",
+                    "description": "Expose public peer list and allow others to discover this server"
+                  },
+                  "auto_fetch_peer_links": {
+                    "type": "boolean",
+                    "description": "Automatically fetch remote peer links that other servers share"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated settings",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/AdminServerSettings" }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/posts": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all posts with pagination and filters",
+        "operationId": "listAdminPosts",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "page",
+            "in": "query",
+            "schema": { "type": "integer", "default": 1, "minimum": 1 },
+            "description": "Page number"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "schema": {
+              "type": "integer",
+              "default": 20,
+              "minimum": 1,
+              "maximum": 100
+            },
+            "description": "Items per page"
+          },
+          {
+            "name": "authorUsername",
+            "in": "query",
+            "schema": { "type": "string" },
+            "description": "Filter by author username"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Posts list",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPostsListResponse"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/posts/{id}": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "Get specific post details",
+        "operationId": "getAdminPost",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID to retrieve"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post details",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/AdminPostSummary"
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "Post not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      },
+      "patch": {
+        "tags": ["Admin"],
+        "summary": "Update a post",
+        "operationId": "updateAdminPost",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID to update"
+          }
+        ],
+        "requestBody": {
+          "required": false,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "content": {
+                    "type": "string",
+                    "description": "Post content"
+                  },
+                  "message": {
+                    "type": "string",
+                    "description": "Post message"
+                  },
+                  "is_deleted": {
+                    "type": "boolean",
+                    "description": "Post deletion status"
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Post updated",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "updated": {
+                      "type": "boolean"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "Post not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      },
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Delete a post",
+        "operationId": "deleteAdminPost",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID to delete"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Post deleted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "msg": {
+                      "type": "string",
+                      "example": "Post deleted successfully"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "404": { "description": "Post not found" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/invites": {
+      "get": {
+        "tags": ["Admin"],
+        "summary": "List all invite tokens",
+        "description": "Get a list of all invite tokens created on this server, including their status (unused, used, revoked).",
+        "operationId": "listInviteTokens",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "List of invite tokens",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "array",
+                  "items": {
+                    "$ref": "#/components/schemas/InviteTokenRecord"
+                  }
+                }
+              }
+            }
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    },
+    "/api/admin/invites/{token}": {
+      "delete": {
+        "tags": ["Admin"],
+        "summary": "Revoke an invite token",
+        "description": "Revoke an unused invite token. Cannot revoke tokens that are already used or already revoked.",
+        "operationId": "revokeInviteToken",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "token",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "The invite token to revoke"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Token revoked successfully",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/RevokeInviteTokenResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Token not found, already used, or already revoked"
+          },
+          "401": { "description": "Unauthorized - Missing or invalid token" },
+          "403": { "description": "Forbidden - Admin privileges required" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "securitySchemes": {
+      "bearerAuth": {
+        "type": "http",
+        "scheme": "bearer",
+        "bearerFormat": "JWT",
+        "description": "JWT token obtained from /api/auth/login. Must be from an admin user."
+      }
+    },
+    "schemas": {
+      "AdminDashboardResponse": {
+        "type": "object",
+        "properties": {
+          "stats": {
+            "type": "object",
+            "properties": {
+              "total_users": { "type": "integer" },
+              "active_users": { "type": "integer" },
+              "inactive_users": { "type": "integer" },
+              "total_posts": { "type": "integer" }
+            }
+          },
+          "recent_activity": {
+            "type": "object",
+            "properties": {
+              "users": {
+                "type": "array",
+                "items": {
+                  "$ref": "#/components/schemas/AdminUserSummary"
+                }
+              }
+            }
+          }
+        }
+      },
+      "AdminUserSummary": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "address": {
+            "type": "string",
+            "description": "Full ActivityPub address (username@domain)"
+          },
+          "display_name": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "is_active": { "type": "boolean" }
+        }
+      },
+      "AdminUsersListResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminUserListItem"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "AdminUserListItem": {
+        "type": "object",
+        "properties": {
+          "username": { "type": "string" },
+          "address": { "type": "string" },
+          "display_name": { "type": "string", "nullable": true },
+          "summary": { "type": "string", "nullable": true },
+          "created_at": { "type": "string", "format": "date-time" },
+          "is_active": { "type": "boolean" },
+          "is_admin": { "type": "boolean" },
+          "is_following_public": {
+            "type": "boolean",
+            "description": "Whether the user is following the public timeline"
+          },
+          "post_count": { "type": "integer" }
+        }
+      },
+      "AdminUserResponse": {
+        "type": "object",
+        "properties": {
+          "user": {
+            "$ref": "#/components/schemas/AdminUserListItem"
+          },
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPostSummary"
+            }
+          }
+        }
+      },
+      "AdminUserStatusResponse": {
+        "type": "object",
+        "properties": {
+          "msg": { "type": "string" },
+          "is_active": { "type": "boolean" }
+        }
+      },
+      "AdminPostSummary": {
+        "type": "object",
+        "properties": {
+          "guid": {
+            "type": "string",
+            "description": "Post GUID identifier"
+          },
+          "author_username": {
+            "type": "string",
+            "description": "Username of the post author"
+          },
+          "content": {
+            "type": "string",
+            "description": "Post content"
+          },
+          "created_at": {
+            "type": "string",
+            "format": "date-time",
+            "description": "When the post was created"
+          },
+          "raw_message": {
+            "type": "object",
+            "nullable": true,
+            "description": "Raw ActivityPub message object"
+          }
+        }
+      },
+      "AdminPostsListResponse": {
+        "type": "object",
+        "properties": {
+          "posts": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/AdminPostSummary"
+            }
+          },
+          "pagination": {
+            "$ref": "#/components/schemas/Pagination"
+          }
+        }
+      },
+      "AdminServerSettings": {
+        "type": "object",
+        "properties": {
+          "registration_mode": {
+            "type": "string",
+            "enum": ["open", "invite"]
+          },
+          "allow_public_peers": { "type": "boolean" },
+          "auto_fetch_peer_links": { "type": "boolean" }
+        }
+      },
+      "Pagination": {
+        "type": "object",
+        "properties": {
+          "page": { "type": "integer" },
+          "limit": { "type": "integer" },
+          "total": { "type": "integer" },
+          "pages": { "type": "integer" }
+        }
+      },
+      "InviteTokenRecord": {
+        "type": "object",
+        "required": ["token", "status", "created_at"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token"
+          },
+          "created_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who created this token"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["unused", "used", "revoked"],
+            "description": "Current status of the token"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          },
+          "used_at": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Unix timestamp when the token was used, null if unused"
+          },
+          "used_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who used this token, null if unused"
+          }
+        }
+      },
+      "RevokeInviteTokenResponse": {
+        "type": "object",
+        "required": ["success", "message"],
+        "properties": {
+          "success": {
+            "type": "boolean",
+            "description": "Whether the revocation was successful"
+          },
+          "message": {
+            "type": "string",
+            "description": "Human-readable message describing the result"
+          }
+        }
+      }
+    }
+  }
+}
+

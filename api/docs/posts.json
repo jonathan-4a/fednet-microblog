@@ -1,0 +1,424 @@
+{
+  "paths": {
+    "/u/{username}/statuses/{id}": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Get Post (Note)",
+        "description": "Returns the ActivityPub Note object for a specific post. Includes content, metadata, and links to replies, likes, and shares collections.",
+        "operationId": "getPost",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID or full note ID (e.g., 'abc123' or 'http://example.com/u/alice#abc123')"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Note document",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/Note" }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/replies": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Get Post Replies Collection",
+        "description": "Returns the Collection of replies to a post. The Discussion - returns reply object URLs.",
+        "operationId": "getPostReplies",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of reply URLs",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/RepliesCollection" }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/likes": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Get Post Likes Collection",
+        "description": "Returns the Collection of actors who liked the post. The Likers - returns actor URLs.",
+        "operationId": "getPostLikes",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of actor URLs who liked the post",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/LikesCollection" }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/statuses/{id}/shares": {
+      "get": {
+        "tags": ["Posts"],
+        "summary": "Get Post Shares Collection",
+        "description": "Returns the Collection of actors who shared/reposted the post. The Boosters - returns actor URLs.",
+        "operationId": "getPostShares",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username of the post author"
+          },
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Post GUID or full note ID"
+          },
+          {
+            "name": "page",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "default": 1 },
+            "description": "Page number for pagination"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": { "type": "integer", "minimum": 1, "maximum": 100, "default": 20 },
+            "description": "Number of items per page"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Collection of actor URLs who shared the post",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/SharesCollection" }
+              }
+            }
+          },
+          "404": {
+            "description": "Post not found or author mismatch",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Note": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": ["array", "string"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["Note"]
+          },
+          "published": {
+            "type": "string",
+            "format": "date-time"
+          },
+          "attributedTo": {
+            "type": "string",
+            "format": "uri"
+          },
+          "content": {
+            "type": "string"
+          },
+          "to": {
+            "type": "array",
+            "items": {
+              "type": "string"
+            }
+          },
+          "cc": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "url": {
+            "type": "string",
+            "format": "uri"
+          },
+          "inReplyTo": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          },
+          "replies": {
+            "$ref": "#/components/schemas/RepliesCollectionReference"
+          },
+          "likes": {
+            "$ref": "#/components/schemas/LikesCollectionReference"
+          },
+          "shares": {
+            "$ref": "#/components/schemas/SharesCollectionReference"
+          }
+        },
+        "required": ["@context", "id", "type", "published", "attributedTo", "content", "to", "cc", "url"]
+      },
+      "RepliesCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/CollectionBase" }]
+      },
+      "LikesCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/CollectionBase" }]
+      },
+      "SharesCollection": {
+        "allOf": [{ "$ref": "#/components/schemas/CollectionBase" }]
+      },
+      "RepliesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollection"]
+          },
+          "first": {
+            "$ref": "#/components/schemas/CollectionPage"
+          }
+        },
+        "required": ["id", "type"]
+      },
+      "LikesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollection"]
+          },
+          "totalItems": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "type"]
+      },
+      "SharesCollectionReference": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollection"]
+          },
+          "totalItems": {
+            "type": "integer"
+          }
+        },
+        "required": ["id", "type"]
+      },
+      "CollectionBase": {
+        "type": "object",
+        "properties": {
+          "@context": {
+            "type": ["array", "string"]
+          },
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollection"]
+          },
+          "totalItems": {
+            "type": "integer"
+          },
+          "first": {
+            "$ref": "#/components/schemas/CollectionPage"
+          }
+        },
+        "required": ["@context", "id", "type", "totalItems", "first"]
+      },
+      "CollectionPage": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "string",
+            "format": "uri"
+          },
+          "type": {
+            "type": "string",
+            "enum": ["OrderedCollectionPage"]
+          },
+          "partOf": {
+            "type": "string",
+            "format": "uri"
+          },
+          "orderedItems": {
+            "type": "array",
+            "items": {
+              "type": "string",
+              "format": "uri"
+            }
+          },
+          "next": {
+            "type": "string",
+            "format": "uri",
+            "nullable": true
+          }
+        },
+        "required": ["id", "type", "partOf", "orderedItems"]
+      }
+    }
+  }
+}
+
+

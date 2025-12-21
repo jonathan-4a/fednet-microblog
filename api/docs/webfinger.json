@@ -1,0 +1,91 @@
+{
+  "paths": {
+    "/.well-known/webfinger": {
+      "get": {
+        "tags": ["WebFinger"],
+        "summary": "WebFinger discovery",
+        "description": "Discover user information via WebFinger protocol",
+        "parameters": [
+          {
+            "name": "resource",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "pattern": "^acct:.+@.+$",
+              "example": "acct:alice@example.com"
+            },
+            "description": "Resource identifier in the format 'acct:username@domain'"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "WebFinger resource descriptor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/WebFingerResponse"
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid resource format or domain mismatch"
+          },
+          "404": {
+            "description": "User not found or inactive"
+          },
+          "500": {
+            "description": "Unexpected server error"
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "WebFingerResponse": {
+        "type": "object",
+        "required": ["subject", "links"],
+        "properties": {
+          "subject": {
+            "type": "string",
+            "description": "The resource identifier (acct:username@domain)",
+            "example": "acct:alice@example.com"
+          },
+          "links": {
+            "type": "array",
+            "description": "Array of links to related resources",
+            "items": {
+              "$ref": "#/components/schemas/WebFingerLink"
+            }
+          }
+        }
+      },
+      "WebFingerLink": {
+        "type": "object",
+        "required": ["rel", "type", "href"],
+        "properties": {
+          "rel": {
+            "type": "string",
+            "description": "Link relation type",
+            "example": "self"
+          },
+          "type": {
+            "type": "string",
+            "description": "MIME type of the linked resource",
+            "example": "application/activity+json"
+          },
+          "href": {
+            "type": "string",
+            "format": "uri",
+            "description": "URL of the linked resource (actor endpoint)",
+            "example": "https://example.com/u/alice"
+          }
+        }
+      }
+    }
+  }
+}
+
+

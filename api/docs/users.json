@@ -1,0 +1,240 @@
+{
+  "paths": {
+    "/api/users/me": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Get current user's profile",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "200": {
+            "description": "Profile details",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid token" }
+        }
+      },
+      "patch": {
+        "tags": ["Users"],
+        "summary": "Update profile",
+        "description": "Update the current user's display name and/or summary.",
+        "security": [{ "bearerAuth": [] }],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "displayName": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "example": "Alice A."
+                  },
+                  "summary": {
+                    "type": "string",
+                    "maxLength": 500,
+                    "example": "Building a friendly fediverse instance."
+                  },
+                  "isFollowingPublic": {
+                    "type": "boolean",
+                    "description": "Controls whether your following list is visible to others.",
+                    "default": true
+                  }
+                },
+                "minProperties": 1
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated profile",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/UserProfile" }
+              }
+            }
+          },
+          "400": { "description": "Invalid input" },
+          "401": { "description": "Missing or invalid token" },
+          "404": { "description": "User not found" }
+        }
+      },
+      "delete": {
+        "tags": ["Users"],
+        "summary": "Delete current account",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "204": { "description": "Account deleted" },
+          "401": { "description": "Missing or invalid token" },
+          "404": { "description": "User not found" }
+        }
+      }
+    },
+    "/api/users/me/invites": {
+      "post": {
+        "tags": ["Users"],
+        "summary": "Generate an invite token",
+        "description": "Generate a new invite token. Only works when server registration mode is set to 'invite'.",
+        "security": [{ "bearerAuth": [] }],
+        "responses": {
+          "201": {
+            "description": "Invite token generated",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/InviteTokenResponse" }
+              }
+            }
+          },
+          "400": {
+            "description": "Registration mode is not 'invite'"
+          },
+          "401": { "description": "Missing or invalid token" }
+        }
+      }
+    },
+    "/api/users/search": {
+      "get": {
+        "tags": ["Users"],
+        "summary": "Search local users",
+        "description": "Search local users by partial username. Returns a limited set of fields. Requires authentication.",
+        "security": [{ "bearerAuth": [] }],
+        "parameters": [
+          {
+            "name": "q",
+            "in": "query",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Partial username to search"
+          },
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "default": 5,
+              "minimum": 1,
+              "maximum": 20
+            },
+            "description": "Maximum number of results (default 5, max 20)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Search results",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/SearchUsersResponse" }
+              }
+            }
+          },
+          "401": { "description": "Missing or invalid token" },
+          "500": { "description": "Unexpected server error" }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "UserProfile": {
+        "type": "object",
+        "required": [
+          "username",
+          "displayName",
+          "summary",
+          "isActive",
+          "isAdmin",
+          "isFollowingPublic",
+          "createdAt"
+        ],
+        "properties": {
+          "username": { "type": "string", "example": "alice" },
+          "displayName": { "type": "string", "example": "Alice A." },
+          "summary": {
+            "type": "string",
+            "example": "Profile bio that shows on the user page"
+          },
+          "isActive": { "type": "boolean" },
+          "isAdmin": { "type": "boolean" },
+          "isFollowingPublic": { "type": "boolean" },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp"
+          }
+        }
+      },
+      "InviteTokenResponse": {
+        "type": "object",
+        "required": ["token", "created_at"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token that can be used for registration",
+            "example": "a1b2c3d4e5f6..."
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          }
+        }
+      },
+      "InviteTokenDto": {
+        "type": "object",
+        "required": ["token", "status", "created_at"],
+        "properties": {
+          "token": {
+            "type": "string",
+            "description": "The invite token"
+          },
+          "status": {
+            "type": "string",
+            "enum": ["unused", "used", "revoked"],
+            "description": "Current status of the token"
+          },
+          "created_at": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the token was created"
+          },
+          "used_at": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Unix timestamp when the token was used, null if unused"
+          },
+          "used_by": {
+            "type": "string",
+            "nullable": true,
+            "description": "Username of the user who used this token, null if unused"
+          }
+        }
+      },
+      "SearchUsersResponse": {
+        "type": "object",
+        "properties": {
+          "users": {
+            "type": "array",
+            "items": {
+              "type": "object",
+              "properties": {
+                "username": { "type": "string" },
+                "displayName": { "type": "string", "nullable": true },
+                "summary": { "type": "string", "nullable": true },
+                "isActive": { "type": "boolean" }
+              },
+              "required": ["username", "isActive"]
+            }
+          }
+        }
+      }
+    }
+  }
+}
+

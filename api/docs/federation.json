@@ -1,0 +1,462 @@
+{
+  "paths": {
+    "/u/{username}": {
+      "get": {
+        "tags": ["Federation"],
+        "summary": "Get Actor Profile",
+        "operationId": "getActorProfile",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Actor document",
+            "content": {
+              "application/activity+json": {
+                "schema": { "$ref": "#/components/schemas/Actor" }
+              }
+            }
+          },
+          "404": {
+            "description": "User not found",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/inbox": {
+      "get": {
+        "tags": ["Federation"],
+        "summary": "Get user inbox",
+        "description": "Retrieve a user's inbox. Requires authentication - you can only view your own inbox. The authenticated user must match the username in the URL path.",
+        "operationId": "getInbox",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the actor. Must match the authenticated user."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inbox response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlaceholderResponse" }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 401 },
+                    "message": { "type": "string", "example": "Authentication required" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - You can only view your own inbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 403 },
+                    "message": { "type": "string", "example": "You can only view your own inbox" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Federation"],
+        "summary": "Deliver activity to inbox (S2S)",
+        "description": "Receive an ActivityPub activity from another server (Server-to-Server). Requires HTTP signature verification. The request must include valid HTTP signature headers (Signature, Host, Date, Digest) signed with the sending actor's private key. The signature is verified against the actor's public key fetched from their actor document.",
+        "operationId": "postInbox",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Local username of the recipient actor"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/activity+json": {
+              "schema": {
+                "type": "object",
+                "description": "ActivityPub activity object (e.g., Follow, Accept, Create, etc.)"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Activity accepted for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Invalid or missing HTTP signature",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 401 },
+                    "message": { "type": "string", "example": "Invalid or missing HTTP signature" }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/u/{username}/outbox": {
+      "get": {
+        "tags": ["Federation"],
+        "summary": "Preview outbox (placeholder)",
+        "operationId": "getOutboxPlaceholder",
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" }
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Outbox placeholder response",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/PlaceholderResponse" }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "tags": ["Federation"],
+        "summary": "Publish activity to outbox (C2S)",
+        "description": "Submit an ActivityPub activity to a user's outbox (Client-to-Server). Requires authentication - you can only post to your own outbox. The authenticated user must match the username in the URL path. Supported activity types include Follow, Create (for posts), Like, Announce, and Undo.",
+        "operationId": "postOutbox",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "username",
+            "in": "path",
+            "required": true,
+            "schema": { "type": "string" },
+            "description": "Username of the actor. Must match the authenticated user."
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/activity+json": {
+              "schema": {
+                "type": "object",
+                "required": ["type", "actor", "object"],
+                "properties": {
+                  "@context": {
+                    "type": ["string", "array"],
+                    "example": "https://www.w3.org/ns/activitystreams"
+                  },
+                  "type": {
+                    "type": "string",
+                    "enum": ["Follow", "Create", "Like", "Announce", "Undo"],
+                    "example": "Follow"
+                  },
+                  "actor": {
+                    "type": "string",
+                    "format": "uri",
+                    "description": "Actor URL. Must match the authenticated user's actor URL.",
+                    "example": "http://localhost:3000/u/username"
+                  },
+                  "object": {
+                    "oneOf": [
+                      { "type": "string", "format": "uri" },
+                      { "type": "object" }
+                    ],
+                    "description": "Target object or actor URL for the activity",
+                    "example": "http://instance1:3000/u/targetuser"
+                  }
+                }
+              },
+              "example": {
+                "@context": "https://www.w3.org/ns/activitystreams",
+                "type": "Follow",
+                "actor": "http://localhost:3000/u/alice",
+                "object": "http://instance1:3000/u/bob"
+              }
+            }
+          }
+        },
+        "responses": {
+          "202": {
+            "description": "Activity accepted for processing",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "status": {
+                      "type": "string",
+                      "example": "accepted"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid authentication token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 401 },
+                    "message": { "type": "string", "example": "Missing authorization header" }
+                  }
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Forbidden - You can only post to your own outbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 403 },
+                    "message": { "type": "string", "example": "You can only post as yourself" }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Bad Request - Invalid activity or missing required fields",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "statusCode": { "type": "number", "example": 400 },
+                    "message": { "type": "string", "example": "Activity type is required" }
+                  }
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/proxy": {
+      "get": {
+        "tags": ["Federation"],
+        "summary": "Proxy remote federation resource",
+        "description": "Authenticated helper endpoint that asks this server to fetch a remote HTTP(S) resource (for example WebFinger documents, ActivityPub actors, followers collections, or posts) and returns the response back to the client. This avoids CORS issues and lets the server apply its own network and security policies.",
+        "operationId": "proxyRemoteResource",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "url",
+            "in": "query",
+            "required": true,
+            "schema": {
+              "type": "string",
+              "format": "uri",
+              "example": "https://remote.example/.well-known/webfinger?resource=acct:alice@remote.example"
+            },
+            "description": "Full HTTP(S) URL of the remote resource to fetch."
+          },
+          {
+            "name": "address",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "string",
+              "example": "alice@remote.example"
+            },
+            "description": "Optional logical address/handle associated with the request. Forwarded as an X-Requested-Address header for observability."
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Successful proxy response from remote server",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Remote JSON body. Shape depends on the remote endpoint.",
+                  "additionalProperties": true
+                }
+              },
+              "application/activity+json": {
+                "schema": {
+                  "type": "object",
+                  "description": "Remote ActivityStreams JSON body.",
+                  "additionalProperties": true
+                }
+              },
+              "*/*": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary",
+                  "description": "Non-JSON responses are proxied as raw bytes with the original content type."
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or missing url parameter, or unsupported protocol (only http:// and https:// are allowed)"
+          },
+          "401": {
+            "description": "Unauthorized - Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "502": {
+            "description": "Bad gateway - Remote server returned an error or could not be reached",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": { "$ref": "#/components/schemas/Error" }
+              }
+            }
+          }
+        }
+      }
+    }
+  },
+  "components": {
+    "schemas": {
+      "Actor": {
+        "type": "object",
+        "properties": {
+          "@context": { "type": ["array", "string"] },
+          "id": { "type": "string", "format": "uri" },
+          "type": { "type": "string", "enum": ["Person"] },
+          "preferredUsername": { "type": "string" },
+          "name": { "type": "string" },
+          "summary": { "type": "string" },
+          "inbox": { "type": "string", "format": "uri" },
+          "outbox": { "type": "string", "format": "uri" },
+          "followers": { "type": "string", "format": "uri" },
+          "following": { "type": "string", "format": "uri" },
+          "liked": { "type": "string", "format": "uri" },
+          "publicKey": {
+            "type": "object",
+            "properties": {
+              "id": { "type": "string", "format": "uri" },
+              "owner": { "type": "string", "format": "uri" },
+              "publicKeyPem": { "type": "string" }
+            },
+            "required": ["id", "owner", "publicKeyPem"]
+          }
+        },
+        "required": [
+          "@context",
+          "id",
+          "type",
+          "preferredUsername",
+          "inbox",
+          "outbox",
+          "publicKey"
+        ]
+      },
+      "PlaceholderResponse": {
+        "type": "object",
+        "properties": {
+          "message": { "type": "string" },
+          "username": { "type": "string" }
+        }
+      },
+      "Error": {
+        "type": "object",
+        "properties": {
+          "error": { "type": "string" }
+        }
+      }
+    }
+  }
+}
+
