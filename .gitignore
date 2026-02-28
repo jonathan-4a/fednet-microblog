@@ -1,0 +1,28 @@
+# Global ignores
+.DS_Store
+*.log
+*.tsbuildinfo
+scripts/
+
+# Environment files
+*.env
+*.env.local
+*.env.*.local
+
+# -----------------
+# Client
+# -----------------
+/client/node_modules/
+/client/dist/
+
+# -----------------
+# API
+# -----------------
+/api/node_modules/
+/api/dist/
+/api/public/assets/
+/api/public/index.html
+/api/docker/data/
+/api/node.db
+/api/*.db
+/api/logs/
