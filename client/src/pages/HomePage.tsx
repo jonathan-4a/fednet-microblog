@@ -1,3 +1,4 @@
+// src/pages/HomePage.tsx
 import { Box, Typography } from '@mui/material'
 import { TwitterLayout } from '../components/layout/TwitterLayout'
 

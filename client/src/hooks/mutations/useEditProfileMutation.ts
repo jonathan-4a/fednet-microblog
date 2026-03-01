@@ -1,3 +1,4 @@
+// src/hooks/mutations/useEditProfileMutation.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updateProfile } from '../../services/users'
 import type { UpdateProfileRequest } from '../../types/user'

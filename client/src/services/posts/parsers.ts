@@ -1,3 +1,4 @@
+// src/services/posts/parsers.ts
 import type { OutboxResponse, CreateActivity, Note } from '../../types/activitypub'
 import type { Post } from '../../types/posts'
 import { transformNoteToPost } from './transformers'

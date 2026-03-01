@@ -1,3 +1,4 @@
+// src/services/federation.ts
 import type { Actor, OrderedCollection } from '../types/activitypub'
 import { fetchResource } from './proxy'
 

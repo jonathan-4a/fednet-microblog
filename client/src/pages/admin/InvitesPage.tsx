@@ -1,3 +1,4 @@
+// src/pages/admin/InvitesPage.tsx
 import { useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import { useAdminInvitesQuery } from '../../hooks/queries/useAdminQueries'

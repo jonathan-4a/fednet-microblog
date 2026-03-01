@@ -1,3 +1,4 @@
+// src/components/profile/RepliesTab.tsx
 import { Box, CircularProgress } from '@mui/material'
 import { useInView } from 'react-intersection-observer'
 import { useEffect } from 'react'

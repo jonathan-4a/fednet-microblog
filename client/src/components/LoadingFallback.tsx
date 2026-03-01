@@ -1,3 +1,4 @@
+// src/components/LoadingFallback.tsx
 import { LoadingSpinner } from './LoadingSpinner'
 
 interface LoadingFallbackProps {

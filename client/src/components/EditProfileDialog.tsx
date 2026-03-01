@@ -1,3 +1,4 @@
+// src/components/EditProfileDialog.tsx
 import {
   Dialog,
   DialogTitle,

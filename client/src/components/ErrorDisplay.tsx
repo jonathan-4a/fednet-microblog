@@ -1,3 +1,4 @@
+// src/components/ErrorDisplay.tsx
 import { Box, Typography } from '@mui/material'
 
 interface ErrorDisplayProps {

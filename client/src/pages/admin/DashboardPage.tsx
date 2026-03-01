@@ -1,3 +1,4 @@
+// src/pages/admin/DashboardPage.tsx
 import { Box, Typography, Grid } from '@mui/material'
 import { useDashboardQuery } from '../../hooks/queries/useAdminQueries'
 import { StatCard } from '../../components/admin/StatCard'

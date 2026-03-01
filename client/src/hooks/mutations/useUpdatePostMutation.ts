@@ -1,3 +1,4 @@
+// src/hooks/mutations/useUpdatePostMutation.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { updatePost } from '../../services/posts'
 import type { UpdatePostRequest, Post } from '../../types/posts'

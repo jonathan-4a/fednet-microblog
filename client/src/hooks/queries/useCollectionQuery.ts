@@ -1,3 +1,4 @@
+// src/hooks/queries/useCollectionQuery.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getFollowers, getFollowing, getCollectionPage } from '../../services/socials'
 import type { OrderedCollection, OrderedCollectionPage } from '../../types/activitypub'

@@ -1,3 +1,4 @@
+// src/components/admin/StatCard.tsx
 import { Paper, Typography, Box } from '@mui/material'
 import PeopleIcon from '@mui/icons-material/People'
 import PersonIcon from '@mui/icons-material/Person'

@@ -1,3 +1,4 @@
+// src/routes/admin.tsx
 import { lazy } from 'react'
 
 const AdminPage = lazy(() =>

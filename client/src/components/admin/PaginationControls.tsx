@@ -1,3 +1,4 @@
+// src/components/admin/PaginationControls.tsx
 import { Box, Pagination } from '@mui/material'
 import type { Pagination as PaginationType } from '../../types/admin'
 

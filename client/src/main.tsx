@@ -1,3 +1,4 @@
+// src/main.tsx
 import { createRoot } from 'react-dom/client'
 import { BrowserRouter } from 'react-router-dom'
 import { ThemeProvider, createTheme } from '@mui/material/styles'

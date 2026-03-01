@@ -1,3 +1,4 @@
+// src/pages/admin/AdminPage.tsx
 import { useMemo, lazy, Suspense } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {

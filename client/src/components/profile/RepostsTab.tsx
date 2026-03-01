@@ -1,3 +1,4 @@
+// src/components/profile/RepostsTab.tsx
 import { PostList } from '../post/PostList'
 import { useUserPostsQuery } from '../../hooks/queries/useUserPostsQuery'
 import type { Post } from '../../types/posts'

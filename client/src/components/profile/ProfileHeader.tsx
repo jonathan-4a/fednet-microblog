@@ -1,3 +1,4 @@
+// src/components/profile/ProfileHeader.tsx
 import { useState, lazy, Suspense } from 'react'
 import { Box } from '@mui/material'
 import type { Actor, OrderedCollection } from '../../types/activitypub'

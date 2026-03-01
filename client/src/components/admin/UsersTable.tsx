@@ -1,3 +1,4 @@
+// src/components/admin/UsersTable.tsx
 import {
   Paper,
   Table,

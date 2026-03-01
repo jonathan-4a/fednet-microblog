@@ -1,3 +1,4 @@
+// src/routes/index.tsx
 import { Suspense, lazy } from 'react'
 import { Routes, Route } from 'react-router-dom'
 import { authRoutes } from './auth'

@@ -1,3 +1,4 @@
+// src/components/profile/ProfileDialogs.tsx
 import { Suspense, lazy } from 'react'
 import { DialogLoadingFallback } from '../LoadingFallback'
 import { ReplyDialog } from '../ReplyDialog'

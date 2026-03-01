@@ -1,3 +1,4 @@
+// src/hooks/queries/useUserSearchQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { searchUsers } from '../../services/users'
 import { getWebFinger } from '../../services/webfinger'

@@ -1,3 +1,4 @@
+// src/hooks/useProfileDataQuery.ts
 import { useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { useProfileQuery } from './queries/useProfileQuery'
 import { useFollowersQuery } from './queries/useFollowersQuery'

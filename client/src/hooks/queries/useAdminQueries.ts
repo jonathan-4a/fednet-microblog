@@ -1,3 +1,4 @@
+// src/hooks/queries/useAdminQueries.ts
 import { useQuery } from '@tanstack/react-query'
 import {
   getDashboard,

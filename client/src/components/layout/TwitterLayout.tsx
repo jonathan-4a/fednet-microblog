@@ -1,3 +1,4 @@
+// src/components/layout/TwitterLayout.tsx
 import type { ReactNode } from 'react'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { LeftSidebar } from './LeftSidebar'

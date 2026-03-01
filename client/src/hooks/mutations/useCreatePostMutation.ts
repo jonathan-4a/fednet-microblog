@@ -1,3 +1,4 @@
+// src/hooks/mutations/useCreatePostMutation.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createPost } from '../../services/posts'
 import { useAuthContext } from '../../hooks/useAuthContext'

@@ -1,3 +1,4 @@
+// src/components/AuthInitializer.tsx
 import { useEffect } from 'react'
 import { useAuthStore } from '../stores/authStore'
 import { LoadingFallback } from './LoadingFallback'

@@ -1,3 +1,4 @@
+// src/services/config.ts
 import { apiRequest } from './apiClient'
 
 export interface ServerConfig {

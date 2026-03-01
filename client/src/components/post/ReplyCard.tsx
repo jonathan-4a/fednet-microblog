@@ -1,3 +1,4 @@
+// src/components/post/ReplyCard.tsx
 import { Box, Typography, Avatar, IconButton, Tooltip } from '@mui/material'
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
 import FavoriteBorderIcon from '@mui/icons-material/FavoriteBorder'

@@ -1,3 +1,4 @@
+// src/pages/admin/SettingsPage.tsx
 import {
   Box,
   Paper,

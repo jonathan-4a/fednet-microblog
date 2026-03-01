@@ -1,3 +1,4 @@
+// src/hooks/queries/usePostQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { getPostDetails } from '../../services/posts'
 import { useAuthContext } from '../../hooks/useAuthContext'
