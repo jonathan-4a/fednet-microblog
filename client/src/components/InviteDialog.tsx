@@ -1,3 +1,4 @@
+// src/components/InviteDialog.tsx
 import {
   Dialog,
   DialogTitle,

@@ -1,3 +1,4 @@
+// src/hooks/useDeleteAccount.ts
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { deleteAccount as deleteAccountService } from '../services/users'

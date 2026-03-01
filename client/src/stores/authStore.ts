@@ -1,3 +1,4 @@
+// src/stores/authStore.ts
 import { create } from 'zustand'
 import { getUserProfile } from '../services/users'
 import type { UserProfileOutput } from '../types/user'

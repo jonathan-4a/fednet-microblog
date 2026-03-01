@@ -1,3 +1,4 @@
+// src/hooks/queries/useLikedPostsQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { getLikedPostsForUser } from '../../services/posts'
 import type { Post } from '../../types/posts'

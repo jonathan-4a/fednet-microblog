@@ -1,3 +1,4 @@
+// src/types/posts.ts
 export interface PostCollection {
   '@context': string | string[]
   id: string

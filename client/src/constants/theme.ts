@@ -1,3 +1,4 @@
+// src/constants/theme.ts
 /**
  * Centralized theme constants
  * Avoids magic numbers and repeated values throughout the codebase

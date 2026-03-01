@@ -1,3 +1,4 @@
+// src/services/posts/index.ts
 // Re-export all functions from the refactored modules for backward compatibility
 export * from './api'
 export * from './outbox'

@@ -1,3 +1,4 @@
+// src/hooks/useProfileFollow.ts
 import { useState, useEffect, useRef } from 'react'
 import { useFollowMutation } from './mutations/useFollowMutation'
 import type { OrderedCollection } from '../types/activitypub'

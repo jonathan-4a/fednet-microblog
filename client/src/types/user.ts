@@ -1,3 +1,4 @@
+// src/types/user.ts
 export interface UserProfileOutput {
   username: string
   displayName: string

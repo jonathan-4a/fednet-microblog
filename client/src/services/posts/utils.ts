@@ -1,3 +1,4 @@
+// src/services/posts/utils.ts
 import { getLiked } from '../socials'
 export { fetchResource, isRemoteUrl } from '../proxy'
 

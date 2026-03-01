@@ -1,3 +1,4 @@
+// src/services/webfinger.ts
 import type { WebFingerResponse } from '../types/activitypub'
 
 // GET /.well-known/webfinger

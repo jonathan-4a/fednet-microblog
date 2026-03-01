@@ -1,3 +1,4 @@
+// src/types/auth.ts
 // Types for /api/auth/* endpoints - matches API DTOs exactly
 
 // POST /api/auth/register - Request (matches RegisterUserInput)

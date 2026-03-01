@@ -1,3 +1,4 @@
+// src/components/layout/RightSidebar.tsx
 import { Box } from '@mui/material'
 import { useAuthContext } from '../../hooks/useAuthContext'
 import { UserSearch } from '../UserSearch'

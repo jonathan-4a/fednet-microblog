@@ -1,3 +1,4 @@
+// src/hooks/useAuthContext.ts
 import { useAuthStore } from '../stores/authStore'
 
 export function useAuthContext() {

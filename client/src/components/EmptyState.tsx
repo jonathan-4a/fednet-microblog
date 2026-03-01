@@ -1,3 +1,4 @@
+// src/components/EmptyState.tsx
 import { Box, Typography } from '@mui/material'
 
 interface EmptyStateProps {

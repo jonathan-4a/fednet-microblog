@@ -1,3 +1,4 @@
+// src/components/admin/RevokeInviteDialog.tsx
 import {
   Dialog,
   DialogContent,

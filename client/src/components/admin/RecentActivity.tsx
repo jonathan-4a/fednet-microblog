@@ -1,3 +1,4 @@
+// src/components/admin/RecentActivity.tsx
 import { Box, Paper, Typography } from '@mui/material'
 import type { AdminUserSummary } from '../../types/admin'
 

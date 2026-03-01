@@ -1,3 +1,4 @@
+// src/utils/date.ts
 export function formatRelativeDate(dateString: string): string {
   const date = new Date(dateString)
   if (isNaN(date.getTime())) return dateString

@@ -1,3 +1,4 @@
+// src/components/SnackbarNotification.tsx
 import { Snackbar, Alert } from '@mui/material'
 import type { SnackbarSeverity } from '../hooks/useSnackbar'
 

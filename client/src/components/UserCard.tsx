@@ -1,3 +1,4 @@
+// src/components/UserCard.tsx
 import { Box, Avatar, Typography, Button } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import { useState, useRef } from 'react'

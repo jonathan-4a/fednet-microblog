@@ -1,3 +1,4 @@
+// src/hooks/mutations/useInviteMutation.ts
 import { useMutation } from '@tanstack/react-query'
 import { generateInvite } from '../../services/users'
 

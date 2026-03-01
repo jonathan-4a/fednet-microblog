@@ -1,3 +1,4 @@
+// src/hooks/queries/usePostRepliesDetailsQuery.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getPostRepliesDetails, getPostRepliesPage } from '../../services/posts'
 import { useAuthContext } from '../../hooks/useAuthContext'

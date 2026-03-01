@@ -1,3 +1,4 @@
+// src/hooks/queries/useUserRepliesQuery.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getUserReplies, getRepliesCollectionPage } from '../../services/posts'
 import type { Post } from '../../types/posts'

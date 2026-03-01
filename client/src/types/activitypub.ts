@@ -1,3 +1,4 @@
+// src/types/activitypub.ts
 // ActivityStreams 2.0 context
 export const ACTIVITY_STREAMS_CONTEXT = 'https://www.w3.org/ns/activitystreams'
 

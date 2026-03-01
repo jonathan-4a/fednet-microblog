@@ -1,3 +1,4 @@
+// src/hooks/mutations/useDeletePostMutation.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { deletePost } from '../../services/posts'
 import type { Post } from '../../types/posts'

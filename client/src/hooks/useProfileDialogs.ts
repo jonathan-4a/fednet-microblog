@@ -1,3 +1,4 @@
+// src/hooks/useProfileDialogs.ts
 import { useState } from 'react'
 
 export function useProfileDialogs() {

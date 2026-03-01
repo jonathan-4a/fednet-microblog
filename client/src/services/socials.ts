@@ -1,3 +1,4 @@
+// src/services/socials.ts
 import type {
   OrderedCollection,
   OrderedCollectionPage,

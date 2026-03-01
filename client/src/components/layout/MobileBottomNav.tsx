@@ -1,3 +1,4 @@
+// src/components/layout/MobileBottomNav.tsx
 import { BottomNavigation, BottomNavigationAction, Paper } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import PersonIcon from '@mui/icons-material/Person'

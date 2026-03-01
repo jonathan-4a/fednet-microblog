@@ -1,3 +1,4 @@
+// src/types/admin.ts
 // Types for /api/admin/* endpoints
 
 // GET /api/admin/dashboard - Response

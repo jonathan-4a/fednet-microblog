@@ -1,3 +1,4 @@
+// src/hooks/queries/useConfigQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { getServerConfig } from '../../services/config'
 import type { ServerConfig } from '../../services/config'
