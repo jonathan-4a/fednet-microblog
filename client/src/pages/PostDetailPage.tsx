@@ -1,3 +1,4 @@
+// src/pages/PostDetailPage.tsx
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
 import { Box, CircularProgress, Typography, Button } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'

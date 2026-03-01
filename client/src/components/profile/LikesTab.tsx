@@ -1,3 +1,4 @@
+// src/components/profile/LikesTab.tsx
 import { PostList } from '../post/PostList'
 import { useLikedPostsQuery } from '../../hooks/queries/useLikedPostsQuery'
 import type { Post } from '../../types/posts'

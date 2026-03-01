@@ -1,3 +1,4 @@
+// src/services/posts/api.ts
 import { apiRequest } from '../apiClient'
 import { API_BASE } from '../../config'
 import { useAuthStore } from '../../stores/authStore'

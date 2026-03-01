@@ -1,3 +1,4 @@
+// src/hooks/useUserSearch.ts
 import { useState, useEffect, useRef } from 'react'
 import { useUserSearchQuery } from './queries/useUserSearchQuery'
 import { useAuthContext } from './useAuthContext'

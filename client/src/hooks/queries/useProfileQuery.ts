@@ -1,3 +1,4 @@
+// src/hooks/queries/useProfileQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { getActor } from '../../services/federation'
 import { getWebFinger } from '../../services/webfinger'

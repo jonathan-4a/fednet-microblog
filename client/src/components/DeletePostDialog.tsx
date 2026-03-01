@@ -1,3 +1,4 @@
+// src/components/DeletePostDialog.tsx
 import {
   Dialog,
   DialogContent,

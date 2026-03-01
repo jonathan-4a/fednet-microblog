@@ -1,3 +1,4 @@
+// src/hooks/useSnackbar.ts
 import { useState } from 'react'
 
 export type SnackbarSeverity = 'success' | 'error'

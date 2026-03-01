@@ -1,3 +1,4 @@
+// src/components/profile/PostsTab.tsx
 import { PostList } from '../post/PostList'
 import { useUserPostsQuery } from '../../hooks/queries/useUserPostsQuery'
 import { useUpdatePostMutation } from '../../hooks/mutations/useUpdatePostMutation'

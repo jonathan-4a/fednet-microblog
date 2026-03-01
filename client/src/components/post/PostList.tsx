@@ -1,3 +1,4 @@
+// src/components/post/PostList.tsx
 import { Box, CircularProgress, Typography } from '@mui/material'
 import LockIcon from '@mui/icons-material/Lock'
 import { useInView } from 'react-intersection-observer'

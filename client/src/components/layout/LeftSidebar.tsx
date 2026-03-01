@@ -1,3 +1,4 @@
+// src/components/layout/LeftSidebar.tsx
 import {
   Box,
   List,

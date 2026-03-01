@@ -1,3 +1,4 @@
+// src/components/post/ReplyThread.tsx
 import { Box } from '@mui/material'
 import { ReplyCard } from './ReplyCard'
 import type { Post } from '../../types/posts'

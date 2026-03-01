@@ -1,3 +1,4 @@
+// src/hooks/queries/useFollowingQuery.ts
 import { useCollectionQuery } from './useCollectionQuery'
 
 export function useFollowingQuery(

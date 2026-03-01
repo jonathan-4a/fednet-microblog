@@ -1,3 +1,4 @@
+// src/hooks/usePostInteractions.ts
 import { useState } from 'react'
 import { useLikeMutation } from './mutations/useLikeMutation'
 import { useSnackbar } from './useSnackbar'

@@ -1,3 +1,4 @@
+// src/components/EditPostDialog.tsx
 import { useState, useEffect, useRef } from 'react'
 import {
   Dialog,

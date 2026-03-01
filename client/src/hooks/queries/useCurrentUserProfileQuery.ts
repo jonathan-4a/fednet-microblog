@@ -1,3 +1,4 @@
+// src/hooks/queries/useCurrentUserProfileQuery.ts
 import { useQuery } from '@tanstack/react-query'
 import { getUserProfile } from '../../services/users'
 import type { UserProfileOutput } from '../../types/user'

@@ -1,3 +1,4 @@
+// src/hooks/queries/useFollowersQuery.ts
 import { useCollectionQuery } from './useCollectionQuery'
 
 export function useFollowersQuery(

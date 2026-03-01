@@ -1,3 +1,4 @@
+// src/hooks/queries/useUserPostsQuery.ts
 import { useInfiniteQuery } from '@tanstack/react-query'
 import { getUserPosts, getPostCollectionPage } from '../../services/posts'
 import type { Post } from '../../types/posts'

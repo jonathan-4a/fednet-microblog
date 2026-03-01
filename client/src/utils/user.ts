@@ -1,3 +1,4 @@
+// src/utils/user.ts
 import { API_BASE } from '../config'
 
 export function isRemoteUser(userId: string): boolean {

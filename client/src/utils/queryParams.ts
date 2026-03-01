@@ -1,3 +1,4 @@
+// src/utils/queryParams.ts
 export function buildQueryString(
   params: Record<string, string | number | undefined>
 ): string {

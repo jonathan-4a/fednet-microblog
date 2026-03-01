@@ -1,3 +1,4 @@
+// src/pages/admin/PostsPage.tsx
 import { useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import { useAdminPostsQuery } from '../../hooks/queries/useAdminQueries'

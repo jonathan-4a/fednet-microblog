@@ -1,3 +1,4 @@
+// src/routes/user.tsx
 import { lazy } from 'react'
 
 const ProfilePage = lazy(() =>

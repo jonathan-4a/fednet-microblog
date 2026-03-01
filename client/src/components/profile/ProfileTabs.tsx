@@ -1,3 +1,4 @@
+// src/components/profile/ProfileTabs.tsx
 import { Box, Typography } from '@mui/material';
 import { formatNumber } from '../../utils/user';
 

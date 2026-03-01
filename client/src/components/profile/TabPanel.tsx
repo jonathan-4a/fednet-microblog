@@ -1,3 +1,4 @@
+// src/components/profile/TabPanel.tsx
 import { Box } from '@mui/material'
 
 interface TabPanelProps {

@@ -1,3 +1,4 @@
+// src/services/posts.ts
 // Main posts service file - orchestrates refactored modules
 import { useAuthStore } from '../stores/authStore'
 import {

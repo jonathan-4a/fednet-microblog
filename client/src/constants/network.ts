@@ -1,3 +1,4 @@
+// src/constants/network.ts
 /**
  * Network-related constants
  */

@@ -1,3 +1,4 @@
+// src/components/DeleteAccountDialog.tsx
 import { Dialog, DialogContent, Button, Typography, Box } from '@mui/material'
 
 interface DeleteAccountDialogProps {

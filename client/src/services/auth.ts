@@ -1,3 +1,4 @@
+// src/services/auth.ts
 import { apiRequest } from './apiClient'
 import { useAuthStore } from '../stores/authStore'
 import type {

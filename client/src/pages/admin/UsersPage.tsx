@@ -1,3 +1,4 @@
+// src/pages/admin/UsersPage.tsx
 import { useState } from 'react'
 import { Box, Typography } from '@mui/material'
 import { useAdminUsersQuery } from '../../hooks/queries/useAdminQueries'

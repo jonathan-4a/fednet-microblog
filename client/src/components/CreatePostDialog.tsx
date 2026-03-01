@@ -1,3 +1,4 @@
+// src/components/CreatePostDialog.tsx
 import {
   Dialog,
   DialogTitle,

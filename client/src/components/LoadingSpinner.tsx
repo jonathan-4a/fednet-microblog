@@ -1,3 +1,4 @@
+// src/components/LoadingSpinner.tsx
 import { Box, CircularProgress } from '@mui/material'
 
 interface LoadingSpinnerProps {

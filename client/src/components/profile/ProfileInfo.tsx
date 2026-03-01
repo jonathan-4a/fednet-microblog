@@ -1,3 +1,4 @@
+// src/components/profile/ProfileInfo.tsx
 import { useState } from 'react'
 import { Box, Typography, Avatar, IconButton, Tooltip } from '@mui/material'
 import ContentCopyIcon from '@mui/icons-material/ContentCopy'

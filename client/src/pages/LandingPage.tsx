@@ -1,3 +1,4 @@
+// src/pages/LandingPage.tsx
 import { Box, Typography, Button, Container, Paper } from '@mui/material'
 import { Link as RouterLink } from 'react-router-dom'
 import PeopleIcon from '@mui/icons-material/People'

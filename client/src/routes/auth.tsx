@@ -1,3 +1,4 @@
+// src/routes/auth.tsx
 import { lazy } from 'react'
 
 const RegisterPage = lazy(() => import('../pages/RegisterPage').then(module => ({ default: module.RegisterPage })))

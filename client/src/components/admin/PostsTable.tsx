@@ -1,3 +1,4 @@
+// src/components/admin/PostsTable.tsx
 import {
   Paper,
   Table,

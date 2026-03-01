@@ -1,3 +1,4 @@
+// src/components/admin/InvitesTable.tsx
 import { useState } from 'react'
 import {
   Paper,

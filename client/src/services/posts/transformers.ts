@@ -1,3 +1,4 @@
+// src/services/posts/transformers.ts
 import type { Note, Actor, OrderedCollectionPage } from '../../types/activitypub'
 import type { Post } from '../../types/posts'
 import {

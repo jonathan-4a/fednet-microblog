@@ -1,3 +1,4 @@
+// src/hooks/mutations/useLikeMutation.ts
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { postOutbox } from '../../services/federation'
 import { createLikeActivity } from '../../types/activitypub'
