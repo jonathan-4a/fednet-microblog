@@ -3,7 +3,7 @@ import { useState, useEffect, useRef } from 'react'
 import { useUserSearchQuery } from './queries/useUserSearchQuery'
 import { useAuthContext } from './useAuthContext'
 
-export function useUserSearch(debounceMs = 1000) {
+export function useUserSearch(debounceMs = 1200) {
   const [query, setQuery] = useState('')
   const [debouncedQuery, setDebouncedQuery] = useState('')
   const timerRef = useRef<number | null>(null)

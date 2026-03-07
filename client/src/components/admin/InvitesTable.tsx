@@ -1,24 +1,23 @@
 // src/components/admin/InvitesTable.tsx
 import { useState } from 'react'
 import {
-  Paper,
+  Box,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Typography,
   Chip,
   Button,
   IconButton,
-  Box,
 } from '@mui/material'
 import { ContentCopy as ContentCopyIcon } from '@mui/icons-material'
 import { SnackbarNotification } from '../SnackbarNotification'
 import { copyToClipboard } from '../../utils/clipboard'
 import { formatTimestamp } from '../../utils/date'
 import type { InviteTokenRecord } from '../../types/admin'
+import { BORDER_RADIUS, COLORS, RGBA_COLORS } from '../../constants/theme'
 
 interface InvitesTableProps {
   invites: InviteTokenRecord[]
@@ -50,109 +49,108 @@ export function InvitesTable({ invites, onRevoke }: InvitesTableProps) {
   }
 
   return (
-    <TableContainer
-      component={Paper}
-      sx={{
-        border: '1px solid',
-        borderColor: 'rgba(0, 0, 0, 0.08)',
-        boxShadow: 'none',
-      }}
-    >
-      <Table>
-        <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 700 }}>Token</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Created By</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Status</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Used By</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Created At</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
-          </TableRow>
-        </TableHead>
-        <TableBody>
-          {invites.length === 0 ? (
-            <TableRow>
-              <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
-                No invite tokens found
-              </TableCell>
+    <>
+      <Box
+        sx={{
+          overflow: 'auto',
+          borderRadius: 2,
+          backgroundColor: 'rgba(0, 0, 0, 0.02)',
+          boxShadow: 'none',
+          '& .MuiTableRow-root': {
+            '&:hover': { outline: 'none', boxShadow: 'none' },
+            '&:focus': { outline: 'none' },
+            '&:focus-within': { outline: 'none' },
+          },
+          '& .MuiTableCell-root': {
+            borderBottom: '1px solid',
+            borderColor: 'rgba(0, 0, 0, 0.06)',
+            '&:focus': { outline: 'none' },
+            '&:focus-within': { outline: 'none' },
+          },
+          '& .MuiButton-root': { '&:focus': { outline: 'none' }, '&:focus-visible': { outline: 'none' } },
+          '& .MuiIconButton-root': { '&:focus': { outline: 'none' }, '&:focus-visible': { outline: 'none' } },
+        }}
+      >
+        <Table size='small'>
+          <TableHead>
+            <TableRow sx={{ backgroundColor: 'transparent' }}>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Token</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Created By</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Status</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Used By</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Created At</TableCell>
+              <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Actions</TableCell>
             </TableRow>
-          ) : (
-            invites.map((invite) => (
-            <TableRow
-              key={invite.token}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                },
-              }}
-            >
-              <TableCell>
-                <Box sx={{ display: 'flex', alignItems: 'center', gap: 1 }}>
-                  <Typography variant='body2' sx={{ fontFamily: 'monospace' }}>
-                    {invite.token.substring(0, 16)}...
-                  </Typography>
-                  <IconButton
-                    size='small'
-                    onClick={() => handleCopy(invite.token)}
-                    sx={{
-                      color: 'text.secondary',
-                      padding: 0.5,
-                      '&:hover': {
-                        backgroundColor: 'rgba(0, 0, 0, 0.05)',
-                      },
-                    }}
-                  >
-                    <ContentCopyIcon sx={{ fontSize: 16 }} />
-                  </IconButton>
-                </Box>
-              </TableCell>
-              <TableCell>{invite.created_by || '-'}</TableCell>
-              <TableCell>
-                <Chip
-                  label={invite.status}
-                  color={
-                    getStatusColor(invite.status) as
-                      | 'success'
-                      | 'default'
-                      | 'error'
-                  }
-                  size='small'
-                />
-              </TableCell>
-              <TableCell>{invite.used_by || '-'}</TableCell>
-              <TableCell>{formatTimestamp(invite.created_at)}</TableCell>
-              <TableCell>
-                {invite.status === 'unused' && (
-                  <Button
-                    variant='outlined'
-                    size='small'
-                    onClick={() => onRevoke(invite.token)}
-                    sx={{
-                      color: '#f4212e',
-                      borderColor: '#f4212e',
-                      border: '1px solid',
-                      textTransform: 'none',
-                      fontSize: '0.875rem',
-                      fontWeight: 400,
-                      borderRadius: 25,
-                      px: 2,
-                      py: 0.25,
-                      minWidth: 70,
-                      '&:hover': {
-                        borderColor: '#f4212e',
-                        backgroundColor: 'rgba(244, 33, 46, 0.1)',
-                      },
-                    }}
-                  >
-                    Delete
-                  </Button>
-                )}
-              </TableCell>
-            </TableRow>
-            ))
-          )}
-        </TableBody>
-      </Table>
+          </TableHead>
+          <TableBody>
+            {invites.length === 0 ? (
+              <TableRow>
+                <TableCell colSpan={6} align='center' sx={{ py: 4, fontSize: 14, color: 'text.secondary', borderBottom: 'none' }}>
+                  No invite tokens found
+                </TableCell>
+              </TableRow>
+            ) : (
+              invites.map((invite) => (
+                <TableRow key={invite.token} sx={{ '&:hover': { backgroundColor: RGBA_COLORS.lightHover } }}>
+                  <TableCell sx={{ fontSize: 14, py: 1.5 }}>
+                    <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
+                      <Typography variant='body2' sx={{ fontFamily: 'monospace', fontSize: 12 }}>
+                        {invite.token.substring(0, 16)}...
+                      </Typography>
+                      <IconButton
+                        size='small'
+                        onClick={() => handleCopy(invite.token)}
+                        sx={{
+                          color: 'text.secondary',
+                          padding: 0.25,
+                          '& .MuiSvgIcon-root': { fontSize: 14 },
+                          '&:hover': { backgroundColor: RGBA_COLORS.hover },
+                        }}
+                      >
+                        <ContentCopyIcon />
+                      </IconButton>
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={{ fontSize: 14, py: 1.5 }}>{invite.created_by || '-'}</TableCell>
+                  <TableCell sx={{ py: 1 }}>
+                    <Chip label={invite.status} color={getStatusColor(invite.status) as 'success' | 'default' | 'error'} size='small' sx={{ fontSize: 11, height: 20 }} />
+                  </TableCell>
+                  <TableCell sx={{ fontSize: 14, py: 1.5 }}>{invite.used_by || '-'}</TableCell>
+                  <TableCell sx={{ fontSize: 14, py: 1.5 }}>{formatTimestamp(invite.created_at)}</TableCell>
+                  <TableCell sx={{ py: 1 }}>
+                    {invite.status === 'unused' && (
+                      <Button
+                        variant='outlined'
+                        size='small'
+                        onClick={() => onRevoke(invite.token)}
+                        sx={{
+                          color: COLORS.twitterRed,
+                          borderColor: COLORS.twitterRed,
+                          textTransform: 'none',
+                          fontSize: 13,
+                          fontWeight: 600,
+                          borderRadius: BORDER_RADIUS.button,
+                          px: 1.5,
+                          py: 0.4,
+                          minWidth: 56,
+                          boxShadow: 'none',
+                          '&:hover': {
+                            borderColor: COLORS.twitterRed,
+                            backgroundColor: RGBA_COLORS.redMedium,
+                            boxShadow: 'none',
+                          },
+                        }}
+                      >
+                        Delete
+                      </Button>
+                    )}
+                  </TableCell>
+                </TableRow>
+              ))
+            )}
+          </TableBody>
+        </Table>
+      </Box>
       <SnackbarNotification
         open={copiedToken !== null}
         message='Token copied to clipboard'
@@ -160,7 +158,7 @@ export function InvitesTable({ invites, onRevoke }: InvitesTableProps) {
         onClose={() => setCopiedToken(null)}
         autoHideDuration={2000}
       />
-    </TableContainer>
+    </>
   )
 }
 

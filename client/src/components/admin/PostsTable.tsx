@@ -1,10 +1,9 @@
 // src/components/admin/PostsTable.tsx
 import {
-  Paper,
+  Box,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Button,
@@ -20,78 +19,82 @@ interface PostsTableProps {
 
 export function PostsTable({ posts, onDelete }: PostsTableProps) {
   return (
-    <TableContainer
-      component={Paper}
+    <Box
       sx={{
-        border: '1px solid',
-        borderColor: RGBA_COLORS.border,
+        overflow: 'auto',
+        borderRadius: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.02)',
         boxShadow: 'none',
+        '& .MuiTableRow-root': {
+          '&:hover': { outline: 'none', boxShadow: 'none' },
+          '&:focus': { outline: 'none' },
+          '&:focus-within': { outline: 'none' },
+        },
+        '& .MuiTableCell-root': {
+          borderBottom: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.06)',
+          '&:focus': { outline: 'none' },
+          '&:focus-within': { outline: 'none' },
+        },
+        '& .MuiButton-root': { '&:focus': { outline: 'none' }, '&:focus-visible': { outline: 'none' } },
       }}
     >
-      <Table>
+      <Table size='small'>
         <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 700 }}>Author</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Content</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Created</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+          <TableRow sx={{ backgroundColor: 'transparent' }}>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Author</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Content</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Created</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {posts.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={4} align='center' sx={{ py: 4 }}>
+              <TableCell colSpan={4} align='center' sx={{ py: 4, fontSize: 14, color: 'text.secondary', borderBottom: 'none' }}>
                 No posts found
               </TableCell>
             </TableRow>
           ) : (
             posts.map((post) => (
-            <TableRow
-              key={post.guid}
-              sx={{
-                '&:hover': {
-                  backgroundColor: RGBA_COLORS.lightHover,
-                },
-              }}
-            >
-              <TableCell>{post.author_username}</TableCell>
-              <TableCell>
-                {post.content.length > 50
-                  ? `${post.content.substring(0, 50)}...`
-                  : post.content}
-              </TableCell>
-              <TableCell>{formatDate(post.created_at)}</TableCell>
-              <TableCell>
-                <Button
-                  variant='outlined'
-                  size='small'
-                  onClick={() => onDelete(post.guid)}
-                  sx={{
-                    color: COLORS.twitterRed,
-                    borderColor: COLORS.twitterRed,
-                    border: '1px solid',
-                    textTransform: 'none',
-                    fontSize: '0.875rem',
-                    fontWeight: 400,
-                    borderRadius: BORDER_RADIUS.button,
-                    px: 2,
-                    py: 0.25,
-                    minWidth: 70,
-                    '&:hover': {
+              <TableRow key={post.guid} sx={{ '&:hover': { backgroundColor: RGBA_COLORS.lightHover } }}>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{post.author_username}</TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>
+                  {post.content.length > 50 ? `${post.content.substring(0, 50)}...` : post.content}
+                </TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{formatDate(post.created_at)}</TableCell>
+                <TableCell sx={{ py: 1 }}>
+                  <Button
+                    variant='outlined'
+                    size='small'
+                    onClick={() => onDelete(post.guid)}
+                    sx={{
+                      color: COLORS.twitterRed,
                       borderColor: COLORS.twitterRed,
-                      backgroundColor: RGBA_COLORS.redMedium,
-                    },
-                  }}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
+                      textTransform: 'none',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      borderRadius: BORDER_RADIUS.button,
+                      px: 1.5,
+                      py: 0.4,
+                      minWidth: 56,
+                      boxShadow: 'none',
+                      '&:hover': {
+                        borderColor: COLORS.twitterRed,
+                        backgroundColor: RGBA_COLORS.redMedium,
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))
           )}
         </TableBody>
       </Table>
-    </TableContainer>
+    </Box>
   )
 }
 

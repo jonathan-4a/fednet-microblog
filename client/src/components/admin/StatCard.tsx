@@ -4,6 +4,7 @@ import PeopleIcon from '@mui/icons-material/People'
 import PersonIcon from '@mui/icons-material/Person'
 import PersonOffIcon from '@mui/icons-material/PersonOff'
 import ArticleIcon from '@mui/icons-material/Article'
+import { BORDER_RADIUS, RGBA_COLORS } from '../../constants/theme'
 
 interface StatCardProps {
   label: string
@@ -34,39 +35,23 @@ export function StatCard({ label, value }: StatCardProps) {
     <Paper
       sx={{
         p: 3,
+        borderRadius: BORDER_RADIUS.card,
         border: '1px solid',
-        borderColor: 'rgba(0, 0, 0, 0.08)',
+        borderColor: RGBA_COLORS.border,
         boxShadow: 'none',
-        transition: 'transform 0.2s, box-shadow 0.2s',
-        '&:hover': {
-          transform: 'translateY(-2px)',
-          boxShadow: '0 2px 8px rgba(0, 0, 0, 0.1)',
-        },
       }}
     >
       <Box sx={{ display: 'flex', alignItems: 'center', gap: 1.5, mb: 1.5 }}>
         {icon && (
-          <Box
-            sx={{
-              color,
-              display: 'flex',
-              alignItems: 'center',
-            }}
-          >
+          <Box sx={{ color, display: 'flex', alignItems: 'center' }}>
             {icon}
           </Box>
         )}
-        <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500 }}>
+        <Typography variant='body2' color='text.secondary' sx={{ fontWeight: 500, fontSize: 13 }}>
           {label}
         </Typography>
       </Box>
-      <Typography
-        variant='h4'
-        sx={{
-          fontWeight: 700,
-          color,
-        }}
-      >
+      <Typography sx={{ fontSize: 20, fontWeight: 700, color }}>
         {value}
       </Typography>
     </Paper>
