@@ -6,6 +6,7 @@ import CssBaseline from '@mui/material/CssBaseline'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { ReactQueryDevtools } from '@tanstack/react-query-devtools'
 import './index.css'
+import { COLORS } from './constants/theme'
 import App from './App.tsx'
 import { AuthInitializer } from './components/AuthInitializer'
 import { setQueryClientRef } from './stores/authStore'
@@ -42,11 +43,11 @@ const theme = createTheme({
   },
   spacing: 8,
   palette: {
-    primary: { main: '#1DA1F2' },
-    background: { default: '#fff' },
+    primary: { main: COLORS.twitterBlue },
+    background: { default: COLORS.white },
     text: {
-      primary: '#0f1419',
-      secondary: '#536471',
+      primary: COLORS.textPrimary,
+      secondary: COLORS.textSecondary,
     },
   },
   components: {

@@ -1,22 +1,25 @@
 // src/components/RegisterForm.tsx
-import { useState } from 'react'
-import { useSearchParams, Link } from 'react-router-dom'
+
+import { useState } from 'react';
+import { useSearchParams, Link } from 'react-router-dom';
 import {
   Box,
   Button,
   TextField,
   Typography,
   Alert,
-  Container,
   Paper,
-} from '@mui/material'
-import { useAuth } from '../hooks/useAuth'
-import type { RegisterRequest } from '../types/auth'
+} from '@mui/material';
+import { alpha } from '@mui/material/styles';
+import { useAuth } from '../hooks/useAuth';
+import type { RegisterRequest } from '../types/auth';
+import { COLORS } from '../constants/theme';
+import { API_BASE } from '../config';
 
 export function RegisterForm() {
-  const { register, loading, error } = useAuth()
-  const [searchParams] = useSearchParams()
-  const inviteToken = searchParams.get('token') || ''
+  const { register, loading, error } = useAuth();
+  const [searchParams] = useSearchParams();
+  const inviteToken = searchParams.get('token') || '';
 
   const [formData, setFormData] = useState<RegisterRequest>({
     username: '',
@@ -24,166 +27,353 @@ export function RegisterForm() {
     displayName: '',
     summary: '',
     inviteToken: inviteToken,
-  })
+  });
 
   const [validationErrors, setValidationErrors] = useState<
     Partial<Record<keyof RegisterRequest, string>>
-  >({})
+  >({});
 
   const handleChange =
     (field: keyof RegisterRequest) =>
     (e: React.ChangeEvent<HTMLInputElement>) => {
-      setFormData({
-        ...formData,
-        [field]: e.target.value,
-      })
-
+      setFormData({ ...formData, [field]: e.target.value });
       if (validationErrors[field]) {
-        const nextErrors = { ...validationErrors }
-        delete nextErrors[field]
-        setValidationErrors(nextErrors)
+        const nextErrors = { ...validationErrors };
+        delete nextErrors[field];
+        setValidationErrors(nextErrors);
       }
-    }
+    };
 
   const validate = () => {
-    const errors: Partial<Record<keyof RegisterRequest, string>> = {}
-
-    if (!formData.username.trim()) {
-      errors.username = 'Username is required'
-    }
-
-    if (!formData.password) {
-      errors.password = 'Password is required'
-    } else if (formData.password.length < 6) {
-      errors.password = 'Password must be at least 6 characters'
-    }
-
-    setValidationErrors(errors)
-    return Object.keys(errors).length === 0
-  }
+    const errors: Partial<Record<keyof RegisterRequest, string>> = {};
+    if (!formData.username.trim()) errors.username = 'Username is required';
+    if (!formData.password) errors.password = 'Password is required';
+    else if (formData.password.length < 6)
+      errors.password = 'Password must be at least 6 characters';
+    setValidationErrors(errors);
+    return Object.keys(errors).length === 0;
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault()
-    if (!validate()) return
-
+    e.preventDefault();
+    if (!validate()) return;
     await register({
       username: formData.username.trim(),
       password: formData.password,
       displayName: formData.displayName?.trim() || undefined,
       summary: formData.summary?.trim() || undefined,
       inviteToken: inviteToken || undefined,
-    })
-  }
+    });
+  };
+
+  const domain = new URL(API_BASE).hostname;
+
+  const fieldSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      backgroundColor: 'rgba(245,248,251,1)',
+      '& fieldset': { borderColor: 'rgba(216,226,236,1)', borderWidth: 1.5 },
+      '&:hover fieldset': { borderColor: 'rgba(15,20,25,0.24)' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+  };
 
   return (
     <Box
       sx={{
+        minHeight: '100vh',
         display: 'flex',
-        justifyContent: 'center',
-        alignItems: 'center',
-        minHeight: 'calc(100vh - 64px)',
+        alignItems: 'stretch',
+        background: (theme) =>
+          `radial-gradient(ellipse 70% 55% at 10% 0%, ${alpha(theme.palette.primary.main, 0.12)} 0%, transparent 65%), radial-gradient(ellipse 50% 45% at 92% 100%, ${alpha(theme.palette.primary.main, 0.08)} 0%, transparent 60%), #eaf0f7`,
       }}
     >
-      <Container maxWidth='sm'>
-        <Paper sx={{ p: 3 }}>
-          <Typography variant='h5' component='h1' gutterBottom>
-            Register
-          </Typography>
+      <Paper
+        sx={{
+          display: 'grid',
+          gridTemplateColumns: { xs: '1fr', md: '30% 70%' },
+          width: '100%',
+          minHeight: '100vh',
+          overflow: 'hidden',
+          borderRadius: 0,
+          boxShadow: 'none',
+        }}
+      >
+        {/* LEFT */}
+        <Box
+          sx={{
+            display: { xs: 'none', md: 'flex' },
+            flexDirection: 'column',
+            justifyContent: 'space-between',
+            p: '52px 48px',
+            background: (theme) =>
+              `
+                radial-gradient(130% 180% at 0% 0%, ${alpha(
+                  theme.palette.primary.main,
+                  0.18,
+                )} 0%, transparent 55%),
+                radial-gradient(140% 190% at 100% 10%, ${alpha(
+                  theme.palette.primary.main,
+                  0.12,
+                )} 0%, transparent 55%),
+                radial-gradient(120% 180% at 10% 100%, ${alpha(
+                  theme.palette.primary.main,
+                  0.10,
+                )} 0%, transparent 60%),
+                linear-gradient(145deg, #f7f8fb 0%, #ffffff 40%, #f4f7fc 100%)
+              `,
+            backgroundBlendMode: 'soft-light, soft-light, normal, normal',
+            position: 'relative',
+            color: 'text.primary',
+            overflow: 'hidden',
+          }}
+        >
+          <Box
+            sx={{
+              position: 'absolute',
+              width: 420,
+              height: 420,
+              borderRadius: '50%',
+              background: (theme) =>
+                `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.12)} 0%, transparent 70%)`,
+              top: -130,
+              left: -130,
+              pointerEvents: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              width: 240,
+              height: 240,
+              borderRadius: '50%',
+              background: (theme) =>
+                `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.06)} 0%, transparent 70%)`,
+              bottom: -60,
+              right: -60,
+              pointerEvents: 'none',
+            }}
+          />
+          <Box
+            sx={{
+              position: 'absolute',
+              inset: 0,
+              pointerEvents: 'none',
+              backgroundImage:
+                'linear-gradient(rgba(0,0,0,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(0,0,0,0.02) 1px, transparent 1px)',
+              backgroundSize: '38px 38px',
+            }}
+          />
 
-          {error && (
-            <Alert severity='error' sx={{ mb: 2 }}>
-              {error}
-            </Alert>
-          )}
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography
+              sx={{
+                fontSize: 12,
+                textTransform: 'uppercase',
+                letterSpacing: '0.16em',
+                color: 'text.secondary',
+                fontWeight: 600,
+              }}
+            >
+              Federated microblogging
+            </Typography>
+          </Box>
 
-          <Box component='form' onSubmit={handleSubmit}>
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography
+              component='h2'
+              sx={{
+                fontFamily: 'Sora, sans-serif',
+                fontWeight: 800,
+                fontSize: 36,
+                lineHeight: 1.18,
+                letterSpacing: '-0.04em',
+                mb: 2,
+                color: 'text.primary',
+              }}
+            >
+              Share your
+              <br />
+              <Box component='span' sx={{ color: 'primary.main' }}>
+                thoughts
+              </Box>
+              <br />
+              with the world.
+            </Typography>
+            <Typography
+              sx={{
+                fontSize: 14.5,
+                lineHeight: 1.72,
+                color: 'text.secondary',
+                fontWeight: 300,
+                maxWidth: 280,
+              }}
+            >
+              A decentralized microblogging platform for open conversations
+              across the Fediverse.
+            </Typography>
+          </Box>
+
+          <Box sx={{ position: 'relative', zIndex: 1 }}>
+            <Typography
+              sx={{ fontSize: 12.5, color: 'text.secondary' }}
+            >
+              Open source · Federated
+            </Typography>
+          </Box>
+        </Box>
+
+        {/* RIGHT */}
+        <Box
+          sx={{
+            p: { xs: '40px 28px', md: '52px 56px' },
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: 3,
+            background: '#fff',
+            maxWidth: 640,
+            width: '100%',
+            mx: 'auto',
+          }}
+        >
+          <Box sx={{ mb: 0.5 }}>
+            <Typography
+              component='h1'
+              sx={{
+                fontWeight: 700,
+                fontSize: 26,
+                letterSpacing: '-0.02em',
+                color: 'text.primary',
+              }}
+            >
+              Create account
+            </Typography>
+          </Box>
+
+          {error && <Alert severity='error'>{error}</Alert>}
+
+          <Box
+            component='form'
+            onSubmit={handleSubmit}
+            sx={{ display: 'flex', flexDirection: 'column', gap: 1.75 }}
+          >
+            <Box
+              sx={{
+                display: 'grid',
+                gridTemplateColumns: '1fr 1fr',
+                gap: 1.75,
+              }}
+            >
+              <TextField
+                fullWidth
+                size='small'
+                label='Username'
+                value={formData.username}
+                onChange={handleChange('username')}
+                error={Boolean(validationErrors.username)}
+                helperText={validationErrors.username}
+                required
+                disabled={loading}
+                autoComplete='username'
+                InputProps={{
+                  endAdornment: (
+                    <Typography
+                      sx={{
+                        fontSize: 12,
+                        color: 'text.secondary',
+                        whiteSpace: 'nowrap',
+                      }}
+                    >
+                      @{domain}
+                    </Typography>
+                  ),
+                }}
+                sx={fieldSx}
+              />
+              <TextField
+                fullWidth
+                size='small'
+                label='Password'
+                type='password'
+                value={formData.password}
+                onChange={handleChange('password')}
+                error={Boolean(validationErrors.password)}
+                helperText={validationErrors.password}
+                required
+                disabled={loading}
+                autoComplete='new-password'
+                sx={fieldSx}
+              />
+            </Box>
+
             <TextField
               fullWidth
-              label='Username'
-              value={formData.username}
-              onChange={handleChange('username')}
-              error={Boolean(validationErrors.username)}
-              helperText={validationErrors.username}
-              margin='normal'
-              required
-              disabled={loading}
-            />
-
-            <TextField
-              fullWidth
-              label='Password'
-              type='password'
-              value={formData.password}
-              onChange={handleChange('password')}
-              error={Boolean(validationErrors.password)}
-              helperText={validationErrors.password}
-              margin='normal'
-              required
-              disabled={loading}
-            />
-
-            <TextField
-              fullWidth
-              label='Display Name'
+              size='small'
+              label='Display name'
               value={formData.displayName}
               onChange={handleChange('displayName')}
-              margin='normal'
               disabled={loading}
+              sx={fieldSx}
             />
 
             <TextField
               fullWidth
+              size='small'
               label='Bio'
               value={formData.summary}
               onChange={handleChange('summary')}
-              margin='normal'
               multiline
               rows={3}
               disabled={loading}
+              sx={fieldSx}
             />
 
             <Button
               type='submit'
               fullWidth
               variant='contained'
+              color='primary'
               disabled={loading}
+              disableElevation
               sx={{
-                mt: 2,
-                borderRadius: 25,
+                mt: 0.5,
+                borderRadius: 2,
                 textTransform: 'none',
                 fontWeight: 700,
-                py: 1.5,
-                color: 'white',
-                '&:hover': {
-                  color: 'white',
-                },
+                fontSize: 15,
+                py: 1.25,
+                color: '#fff',
                 '&:disabled': {
-                  color: 'rgba(255, 255, 255, 0.5)',
+                  color: 'rgba(255,255,255,0.7)',
                 },
               }}
             >
-              {loading ? 'Registering...' : 'Register'}
+              {loading ? 'Registering...' : 'Create account'}
             </Button>
           </Box>
 
-          <Box sx={{ mt: 2, textAlign: 'center' }}>
-            <Typography variant='body2' color='text.secondary'>
-              Already have an account?{' '}
-              <Link
-                to='/login'
-                style={{
-                  color: 'inherit',
-                  textDecoration: 'none',
-                  fontWeight: 600,
-                }}
-              >
-                Login
-              </Link>
-            </Typography>
-          </Box>
-        </Paper>
-      </Container>
+          <Typography
+            sx={{
+              textAlign: 'center',
+              fontSize: 13.5,
+              color: 'text.secondary',
+            }}
+          >
+            Already have an account?{' '}
+            <Link
+              to='/login'
+              style={{
+                color: COLORS.twitterBlue,
+                textDecoration: 'none',
+                fontWeight: 600,
+              }}
+            >
+              Log in
+            </Link>
+          </Typography>
+        </Box>
+      </Paper>
     </Box>
-  )
+  );
 }
-

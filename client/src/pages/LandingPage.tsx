@@ -1,5 +1,6 @@
 // src/pages/LandingPage.tsx
 import { Box, Typography, Button, Container, Paper } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import { Link as RouterLink } from 'react-router-dom'
 import PeopleIcon from '@mui/icons-material/People'
 import PublicIcon from '@mui/icons-material/Public'
@@ -17,26 +18,59 @@ export function LandingPage() {
         flexDirection: 'column',
       }}
     >
-      {/* Curved header */}
+      {/* Curved header – high-contrast primary + mesh + grid */}
       <Box
         sx={{
           height: { xs: 180, md: 200 },
-          background: (theme) =>
-            `linear-gradient(135deg, ${theme.palette.primary.light}, ${theme.palette.primary.main})`,
-          borderBottomLeftRadius: '50% 20%',
-          borderBottomRightRadius: '50% 20%',
           position: 'relative',
           overflow: 'hidden',
+          borderBottomLeftRadius: '50% 20%',
+          borderBottomRightRadius: '50% 20%',
           flexShrink: 0,
+          background: (theme) =>
+            [
+              `radial-gradient(130% 180% at 0% 0%, ${alpha(theme.palette.primary.main, 0.4)} 0%, transparent 50%)`,
+              `radial-gradient(140% 190% at 100% 10%, ${alpha(theme.palette.primary.main, 0.35)} 0%, transparent 50%)`,
+              `radial-gradient(120% 180% at 10% 100%, ${alpha(theme.palette.primary.main, 0.3)} 0%, transparent 55%)`,
+              `linear-gradient(135deg, ${theme.palette.primary.light ?? theme.palette.primary.main} 0%, ${theme.palette.primary.main} 100%)`,
+            ].join(', '),
+          backgroundBlendMode: 'normal, normal, normal, normal',
         }}
       >
         <Box
           sx={{
             position: 'absolute',
+            width: 320,
+            height: 320,
+            borderRadius: '50%',
+            background: (theme) =>
+              `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.25)} 0%, transparent 70%)`,
+            top: -100,
+            left: -80,
+            pointerEvents: 'none',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
+            width: 200,
+            height: 200,
+            borderRadius: '50%',
+            background: (theme) =>
+              `radial-gradient(circle, ${alpha(theme.palette.primary.main, 0.2)} 0%, transparent 70%)`,
+            bottom: -50,
+            right: -40,
+            pointerEvents: 'none',
+          }}
+        />
+        <Box
+          sx={{
+            position: 'absolute',
             inset: 0,
-            opacity: 0.25,
-            background:
-              'radial-gradient(circle at 30% 40%, rgba(255,255,255,0.8), transparent 55%)',
+            pointerEvents: 'none',
+            backgroundImage:
+              'linear-gradient(rgba(255,255,255,0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.08) 1px, transparent 1px)',
+            backgroundSize: '38px 38px',
           }}
         />
       </Box>
@@ -45,7 +79,7 @@ export function LandingPage() {
         maxWidth='md'
         sx={{
           position: 'relative',
-          top: { xs: -80, md: -100 },
+          top: { xs: -100, md: -120 },
           flex: 1,
           display: 'flex',
           flexDirection: 'column',
@@ -57,7 +91,7 @@ export function LandingPage() {
             sx={{
               fontSize: { xs: '1.75rem', md: '2.25rem' },
               fontWeight: 800,
-              color: 'text.primary',
+              color: '#fff',
               letterSpacing: '-0.01em',
               mb: 1.5,
             }}
@@ -69,14 +103,14 @@ export function LandingPage() {
             sx={{
               maxWidth: 560,
               mx: 'auto',
-              color: 'text.secondary',
+              color: 'rgba(255,255,255,0.92)',
               fontSize: { xs: 14, md: 16 },
               lineHeight: 1.5,
               mb: 15,
             }}
           >
-            A lighter social space built for clean browsing across the
-            fediverse.
+            A small ActivityPub‑style microblog built for learning and
+            self‑hosting.
           </Typography>
 
           <Box sx={{ display: 'flex', gap: 2, justifyContent: 'center' }}>
@@ -125,23 +159,23 @@ export function LandingPage() {
           {[
             {
               icon: PeopleIcon,
-              title: 'Connect',
-              description: 'Interact across the fediverse',
+              title: 'Backend',
+              description: 'Bun + Hono API with local SQLite.',
             },
             {
               icon: PublicIcon,
-              title: 'Open Network',
-              description: 'Communication beyond one server',
+              title: 'ActivityPub',
+              description: 'Inbox, outbox, followers and post endpoints.',
             },
             {
               icon: SecurityIcon,
-              title: 'Private',
-              description: 'Control stays with you',
+              title: 'Client',
+              description: 'React interface for posts, profiles and admin.',
             },
             {
               icon: ChatBubbleOutlineIcon,
-              title: 'Share',
-              description: 'Post and explore with ease',
+              title: 'Client side recommendations',
+              description: 'Timeline and user lists driven by pluggable ranking code.',
             },
           ].map((item, i) => (
             <Paper
