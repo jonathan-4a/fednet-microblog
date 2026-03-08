@@ -1,6 +1,7 @@
 // src/components/admin/RecentActivity.tsx
-import { Box, Paper, Typography } from '@mui/material'
+import { Box, Typography } from '@mui/material'
 import type { AdminUserSummary } from '../../types/admin'
+import { RGBA_COLORS } from '../../constants/theme'
 
 interface RecentActivityProps {
   users: AdminUserSummary[]
@@ -8,52 +9,36 @@ interface RecentActivityProps {
 
 export function RecentActivity({ users }: RecentActivityProps) {
   return (
-    <Box sx={{ mt: 4 }}>
-      <Typography variant='h6' gutterBottom sx={{ fontWeight: 700, mb: 2 }}>
-        Recent Activity
+    <Box sx={{ mt: 3 }}>
+      <Typography sx={{ fontSize: 13, fontWeight: 600, color: 'text.secondary', mb: 1.5 }}>
+        Recent activity
       </Typography>
-      <Paper
-        sx={{
-          p: 3,
-          border: '1px solid',
-          borderColor: 'rgba(0, 0, 0, 0.08)',
-          boxShadow: 'none',
-          borderRadius: 2,
-        }}
-      >
-        {users.length === 0 ? (
-          <Typography variant='body2' color='text.secondary' sx={{ py: 2 }}>
-            No recent activity
-          </Typography>
-        ) : (
-          users.map((user) => (
+      {users.length === 0 ? (
+        <Typography variant='body2' color='text.secondary' sx={{ py: 2.5, px: 2, fontSize: 13, backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: 2 }}>
+          No recent activity
+        </Typography>
+      ) : (
+        <Box sx={{ backgroundColor: 'rgba(0,0,0,0.02)', borderRadius: 2, overflow: 'hidden' }}>
+          {users.map((user) => (
             <Box
               key={user.username}
               sx={{
-                py: 2,
-                px: 1,
-                borderBottom: '1px solid',
-                borderColor: 'rgba(0, 0, 0, 0.08)',
-                '&:last-child': {
-                  borderBottom: 'none',
-                },
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.02)',
-                  borderRadius: 1,
-                },
-                transition: 'background-color 0.2s',
+                py: 1.5,
+                px: 2,
+                '&:hover': { backgroundColor: RGBA_COLORS.lightHover },
+                transition: 'background-color 0.15s ease',
               }}
             >
-              <Typography variant='body1' sx={{ fontWeight: 600, mb: 0.5 }}>
+              <Typography sx={{ fontSize: 14, fontWeight: 600 }}>
                 {user.username}
               </Typography>
-              <Typography variant='body2' color='text.secondary'>
+              <Typography variant='body2' color='text.secondary' sx={{ fontSize: 12, mt: 0.25 }}>
                 {user.address}
               </Typography>
             </Box>
-          ))
-        )}
-      </Paper>
+          ))}
+        </Box>
+      )}
     </Box>
   )
 }

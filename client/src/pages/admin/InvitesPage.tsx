@@ -44,8 +44,16 @@ export function InvitesPage() {
 
   return (
     <Box>
-      <Typography variant='h5' gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
-        Invite Tokens
+      <Typography
+        sx={{
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'text.primary',
+          mb: 2,
+        }}
+      >
+        Invite tokens
       </Typography>
 
       {error && (
@@ -57,19 +65,19 @@ export function InvitesPage() {
       {invites.length === 0 ? (
         <Box
           sx={{
-            mt: 2,
-            py: 6,
+            mt: 1.5,
+            py: 4,
             textAlign: 'center',
+            borderRadius: 2,
             border: '1px dashed',
             borderColor: 'rgba(0, 0, 0, 0.12)',
-            borderRadius: 2,
             backgroundColor: 'rgba(0, 0, 0, 0.02)',
           }}
         >
-          <Typography variant='body1' color='text.secondary'>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
             No invite tokens found
           </Typography>
-          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5, fontSize: 12 }}>
             Generate invite tokens to allow new user registrations
           </Typography>
         </Box>

@@ -11,16 +11,16 @@ import { LoadingSpinner } from '../../components/LoadingSpinner'
 export function PostsPage() {
   const [page, setPage] = useState(1)
   const [authorFilter, setAuthorFilter] = useState('')
+  const [appliedAuthorFilter, setAppliedAuthorFilter] = useState('')
 
   const {
     data: postsData,
     isLoading: loading,
     error,
-    refetch,
   } = useAdminPostsQuery({
     page,
     limit: 20,
-    authorUsername: authorFilter || undefined,
+    authorUsername: appliedAuthorFilter || undefined,
   })
 
   const deletePost = useDeletePostMutation()
@@ -30,7 +30,7 @@ export function PostsPage() {
 
   const handleSearch = () => {
     setPage(1)
-    refetch()
+    setAppliedAuthorFilter(authorFilter.trim())
   }
 
   const handleDelete = async (guid: string) => {
@@ -42,13 +42,17 @@ export function PostsPage() {
     }
   }
 
-  if (loading && !posts.length) {
-    return <LoadingSpinner />
-  }
-
   return (
     <Box>
-      <Typography variant='h5' gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
+      <Typography
+        sx={{
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'text.primary',
+          mb: 2,
+        }}
+      >
         Posts
       </Typography>
 
@@ -64,22 +68,26 @@ export function PostsPage() {
         onSearch={handleSearch}
       />
 
-      {posts.length === 0 && !loading ? (
+      {loading && !posts.length ? (
+        <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
+          <LoadingSpinner />
+        </Box>
+      ) : posts.length === 0 ? (
         <Box
           sx={{
-            mt: 4,
-            py: 6,
+            mt: 2,
+            py: 4,
             textAlign: 'center',
+            borderRadius: 2,
             border: '1px dashed',
             borderColor: 'rgba(0, 0, 0, 0.12)',
-            borderRadius: 2,
             backgroundColor: 'rgba(0, 0, 0, 0.02)',
           }}
         >
-          <Typography variant='body1' color='text.secondary'>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
             No posts found
           </Typography>
-          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5, fontSize: 12 }}>
             {authorFilter
               ? `No posts found for author "${authorFilter}"`
               : 'There are no posts in the system yet'}
