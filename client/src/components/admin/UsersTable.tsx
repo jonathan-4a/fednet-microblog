@@ -1,16 +1,16 @@
 // src/components/admin/UsersTable.tsx
 import {
-  Paper,
+  Box,
   Table,
   TableBody,
   TableCell,
-  TableContainer,
   TableHead,
   TableRow,
   Switch,
   Button,
 } from '@mui/material'
 import type { AdminUserListItem } from '../../types/admin'
+import { BORDER_RADIUS, COLORS, RGBA_COLORS } from '../../constants/theme'
 
 interface UsersTableProps {
   users: AdminUserListItem[]
@@ -20,84 +20,92 @@ interface UsersTableProps {
 
 export function UsersTable({ users, onToggleActive, onDelete }: UsersTableProps) {
   return (
-    <TableContainer
-      component={Paper}
+    <Box
       sx={{
-        border: '1px solid',
-        borderColor: 'rgba(0, 0, 0, 0.08)',
+        overflow: 'auto',
+        borderRadius: 2,
+        backgroundColor: 'rgba(0, 0, 0, 0.02)',
         boxShadow: 'none',
+        '& .MuiTableRow-root': {
+          '&:hover': { outline: 'none', boxShadow: 'none' },
+          '&:focus': { outline: 'none' },
+          '&:focus-within': { outline: 'none' },
+        },
+        '& .MuiTableCell-root': {
+          borderBottom: '1px solid',
+          borderColor: 'rgba(0, 0, 0, 0.06)',
+          '&:focus': { outline: 'none' },
+          '&:focus-within': { outline: 'none' },
+        },
+        '& .MuiSwitch-root': { '& .Mui-focusVisible': { outline: 'none' } },
+        '& .MuiButton-root': { '&:focus': { outline: 'none' }, '&:focus-visible': { outline: 'none' } },
       }}
     >
-      <Table>
+      <Table size='small'>
         <TableHead>
-          <TableRow>
-            <TableCell sx={{ fontWeight: 700 }}>Username</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Display Name</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Active</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Admin</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Posts</TableCell>
-            <TableCell sx={{ fontWeight: 700 }}>Actions</TableCell>
+          <TableRow sx={{ backgroundColor: 'transparent' }}>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Username</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Display Name</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Active</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Admin</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Posts</TableCell>
+            <TableCell sx={{ fontWeight: 600, fontSize: 13, color: 'text.secondary', py: 1.5 }}>Actions</TableCell>
           </TableRow>
         </TableHead>
         <TableBody>
           {users.length === 0 ? (
             <TableRow>
-              <TableCell colSpan={6} align='center' sx={{ py: 4 }}>
+              <TableCell colSpan={6} align='center' sx={{ py: 4, fontSize: 14, color: 'text.secondary', borderBottom: 'none' }}>
                 No users found
               </TableCell>
             </TableRow>
           ) : (
             users.map((user) => (
-            <TableRow
-              key={user.username}
-              sx={{
-                '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
-                },
-              }}
-            >
-              <TableCell>{user.username}</TableCell>
-              <TableCell>{user.display_name || '-'}</TableCell>
-              <TableCell>
-                <Switch
-                  checked={user.is_active}
-                  onChange={() => onToggleActive(user.username, user.is_active)}
-                  color='primary'
-                />
-              </TableCell>
-              <TableCell>{user.is_admin ? 'Yes' : 'No'}</TableCell>
-              <TableCell>{user.post_count}</TableCell>
-              <TableCell>
-                <Button
-                  variant='outlined'
-                  size='small'
-                  onClick={() => onDelete(user.username)}
-                  sx={{
-                    color: '#f4212e',
-                    borderColor: '#f4212e',
-                    border: '1px solid',
-                    textTransform: 'none',
-                    fontSize: '0.875rem',
-                    fontWeight: 400,
-                    borderRadius: 25,
-                    px: 2,
-                    py: 0.25,
-                    minWidth: 70,
-                    '&:hover': {
-                      borderColor: '#f4212e',
-                      backgroundColor: 'rgba(244, 33, 46, 0.1)',
-                    },
-                  }}
-                >
-                  Delete
-                </Button>
-              </TableCell>
-            </TableRow>
+              <TableRow key={user.username} sx={{ '&:hover': { backgroundColor: RGBA_COLORS.lightHover } }}>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.username}</TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.display_name || '-'}</TableCell>
+                <TableCell sx={{ py: 1 }}>
+                  <Switch
+                    size='small'
+                    checked={user.is_active}
+                    onChange={() => onToggleActive(user.username, user.is_active)}
+                    color='primary'
+                  />
+                </TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.is_admin ? 'Yes' : 'No'}</TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.post_count}</TableCell>
+                <TableCell sx={{ py: 1 }}>
+                  <Button
+                    variant='outlined'
+                    size='small'
+                    onClick={() => onDelete(user.username)}
+                    sx={{
+                      color: COLORS.twitterRed,
+                      borderColor: COLORS.twitterRed,
+                      textTransform: 'none',
+                      fontSize: 13,
+                      fontWeight: 600,
+                      borderRadius: BORDER_RADIUS.button,
+                      px: 1.5,
+                      py: 0.4,
+                      minWidth: 56,
+                      boxShadow: 'none',
+                      '&:hover': {
+                        borderColor: COLORS.twitterRed,
+                        backgroundColor: RGBA_COLORS.redMedium,
+                        boxShadow: 'none',
+                      },
+                    }}
+                  >
+                    Delete
+                  </Button>
+                </TableCell>
+              </TableRow>
             ))
           )}
         </TableBody>
       </Table>
-    </TableContainer>
+    </Box>
   )
 }
 

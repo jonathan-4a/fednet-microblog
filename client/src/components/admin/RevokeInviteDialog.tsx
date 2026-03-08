@@ -1,11 +1,6 @@
 // src/components/admin/RevokeInviteDialog.tsx
-import {
-  Dialog,
-  DialogContent,
-  Button,
-  Typography,
-  Box,
-} from '@mui/material'
+import { Dialog, DialogContent, Button, Typography, Box } from '@mui/material'
+import { BORDER_RADIUS, COLORS, RGBA_COLORS } from '../../constants/theme'
 
 interface RevokeInviteDialogProps {
   open: boolean
@@ -30,61 +25,41 @@ export function RevokeInviteDialog({
       fullWidth
       PaperProps={{
         sx: {
-          borderRadius: 4,
+          borderRadius: BORDER_RADIUS.card,
+          border: '1px solid',
+          borderColor: RGBA_COLORS.border,
+          boxShadow: 'none',
         },
       }}
     >
-      <DialogContent sx={{ p: 4 }}>
-        <Typography
-          variant='h6'
-          sx={{
-            fontWeight: 700,
-            mb: 2,
-            fontSize: 20,
-          }}
-        >
+      <DialogContent sx={{ p: 2.5 }}>
+        <Typography sx={{ fontSize: 17, fontWeight: 600, mb: 1.5 }}>
           Revoke invite token?
         </Typography>
-        <Typography
-          variant='body2'
-          color='text.secondary'
-          sx={{
-            fontSize: 15,
-            lineHeight: 1.5,
-            mb: 3,
-          }}
-        >
-          This invite token will be revoked and can no longer be used for
-          registration. This action cannot be undone.
+        <Typography variant='body2' color='text.secondary' sx={{ fontSize: 13, lineHeight: 1.5, mb: 2 }}>
+          This invite token will be revoked and can no longer be used for registration. This action cannot be undone.
         </Typography>
         <Box sx={{ mb: 2 }}>
-          <Typography
-            variant='body2'
-            sx={{
-              fontFamily: 'monospace',
-              fontSize: 12,
-              color: 'text.secondary',
-              wordBreak: 'break-all',
-            }}
-          >
+          <Typography variant='body2' sx={{ fontFamily: 'monospace', fontSize: 11, color: 'text.secondary', wordBreak: 'break-all' }}>
             {token}
           </Typography>
         </Box>
-        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1.5 }}>
+        <Box sx={{ display: 'flex', flexDirection: 'column', gap: 1 }}>
           <Button
             onClick={onConfirm}
             variant='contained'
+            size='small'
             fullWidth
             sx={{
-              borderRadius: 25,
+              borderRadius: BORDER_RADIUS.button,
               textTransform: 'none',
-              fontWeight: 700,
-              py: 1.5,
+              fontWeight: 600,
+              fontSize: 13,
+              py: 1,
               color: '#fff',
-              backgroundColor: '#f4212e',
-              '&:hover': {
-                backgroundColor: '#d91e2b',
-              },
+              backgroundColor: COLORS.twitterRed,
+              boxShadow: 'none',
+              '&:hover': { backgroundColor: '#d91e2b', boxShadow: 'none' },
             }}
             disabled={loading}
           >
@@ -93,18 +68,17 @@ export function RevokeInviteDialog({
           <Button
             onClick={onClose}
             variant='outlined'
+            size='small'
             fullWidth
             sx={{
-              borderRadius: 25,
+              borderRadius: BORDER_RADIUS.button,
               textTransform: 'none',
-              fontWeight: 700,
-              py: 1.5,
+              fontWeight: 600,
+              fontSize: 13,
+              py: 1,
               color: 'primary.main',
               borderColor: 'primary.main',
-              '&:hover': {
-                borderColor: 'primary.main',
-                backgroundColor: 'rgba(0, 0, 0, 0.03)',
-              },
+              '&:hover': { borderColor: 'primary.main', backgroundColor: RGBA_COLORS.lightHover },
             }}
             disabled={loading}
           >

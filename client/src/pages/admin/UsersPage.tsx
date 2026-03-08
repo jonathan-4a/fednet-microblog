@@ -14,17 +14,17 @@ import { LoadingSpinner } from '../../components/LoadingSpinner'
 export function UsersPage() {
   const [page, setPage] = useState(1)
   const [search, setSearch] = useState('')
+  const [appliedSearch, setAppliedSearch] = useState('')
   const [status, setStatus] = useState<'all' | 'active' | 'inactive'>('all')
 
   const {
     data: usersData,
     isLoading: loading,
     error,
-    refetch,
   } = useAdminUsersQuery({
     page,
     limit: 20,
-    search: search || undefined,
+    search: appliedSearch || undefined,
     status: status !== 'all' ? status : undefined,
   })
 
@@ -36,7 +36,7 @@ export function UsersPage() {
 
   const handleSearch = () => {
     setPage(1)
-    refetch()
+    setAppliedSearch(search.trim())
   }
 
   const handleToggleActive = async (
@@ -62,13 +62,17 @@ export function UsersPage() {
     }
   }
 
-  if (loading && !users.length) {
-    return <LoadingSpinner />
-  }
-
   return (
     <Box>
-      <Typography variant='h5' gutterBottom sx={{ fontWeight: 700, mb: 3 }}>
+      <Typography
+        sx={{
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'text.primary',
+          mb: 2,
+        }}
+      >
         Users
       </Typography>
 
@@ -96,22 +100,26 @@ export function UsersPage() {
         }}
       />
 
-      {users.length === 0 && !loading ? (
+      {loading && !users.length ? (
+        <Box sx={{ py: 6, display: 'flex', justifyContent: 'center' }}>
+          <LoadingSpinner />
+        </Box>
+      ) : users.length === 0 ? (
         <Box
           sx={{
-            mt: 4,
-            py: 6,
+            mt: 2,
+            py: 4,
             textAlign: 'center',
+            borderRadius: 2,
             border: '1px dashed',
             borderColor: 'rgba(0, 0, 0, 0.12)',
-            borderRadius: 2,
             backgroundColor: 'rgba(0, 0, 0, 0.02)',
           }}
         >
-          <Typography variant='body1' color='text.secondary'>
+          <Typography sx={{ fontSize: 13, color: 'text.secondary' }}>
             No users found
           </Typography>
-          <Typography variant='body2' color='text.secondary' sx={{ mt: 1 }}>
+          <Typography variant='body2' color='text.secondary' sx={{ mt: 0.5, fontSize: 12 }}>
             {search
               ? `No users found matching "${search}"`
               : status !== 'all'

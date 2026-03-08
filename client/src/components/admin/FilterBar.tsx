@@ -1,5 +1,11 @@
 // src/components/admin/FilterBar.tsx
 import { Box, TextField, Button, Select, MenuItem, FormControl, InputLabel } from '@mui/material'
+import { RGBA_COLORS } from '../../constants/theme'
+
+const FILTER_HEIGHT = 40
+const INPUT_RADIUS = 1.5
+const INPUT_BORDER = 'rgba(0, 0, 0, 0.12)'
+const INPUT_BORDER_HOVER = 'rgba(0, 0, 0, 0.2)'
 
 interface FilterBarProps {
   searchValue: string
@@ -19,37 +25,84 @@ export function FilterBar({
   statusFilter,
 }: FilterBarProps) {
   return (
-    <Box sx={{ mb: 2, display: 'flex', gap: 2, flexWrap: 'wrap', alignItems: 'center' }}>
+    <Box
+      sx={{
+        mb: 2,
+        display: 'flex',
+        gap: 2,
+        flexWrap: 'wrap',
+        alignItems: 'stretch',
+      }}
+    >
       <TextField
         label='Search'
         value={searchValue}
         onChange={(e) => onSearchChange(e.target.value)}
+        variant='outlined'
         size='small'
-        sx={{
-          minWidth: 200,
-          '& .MuiOutlinedInput-root': {
-            borderRadius: 2,
-          },
+        onKeyDown={(e) => {
+          if (e.key === 'Enter') onSearch()
         }}
-        onKeyPress={(e) => {
-          if (e.key === 'Enter') {
-            onSearch()
-          }
+        sx={{
+          width: 220,
+          '& .MuiOutlinedInput-root': {
+            height: FILTER_HEIGHT,
+            borderRadius: INPUT_RADIUS,
+            boxShadow: 'none',
+            fontSize: 14,
+            backgroundColor: '#fff',
+            '& fieldset': {
+              borderColor: INPUT_BORDER,
+              borderWidth: 1,
+            },
+            '&:hover fieldset': {
+              borderColor: INPUT_BORDER_HOVER,
+            },
+            '&.Mui-focused fieldset': {
+              borderColor: 'primary.main',
+              borderWidth: 1,
+            },
+            '&.Mui-focused': { outline: 'none' },
+          },
+          '& .MuiInputLabel-root': { fontSize: 14 },
         }}
       />
       {statusFilter && (
-        <FormControl size='small' sx={{ minWidth: 120 }}>
+        <FormControl
+          size='small'
+          variant='outlined'
+          sx={{
+            minWidth: 120,
+            '& .MuiOutlinedInput-root': {
+              height: FILTER_HEIGHT,
+              borderRadius: INPUT_RADIUS,
+              boxShadow: 'none',
+              fontSize: 14,
+              backgroundColor: '#fff',
+              '& fieldset': {
+                borderColor: INPUT_BORDER,
+                borderWidth: 1,
+              },
+              '&:hover fieldset': {
+                borderColor: INPUT_BORDER_HOVER,
+              },
+              '&.Mui-focused fieldset': {
+                borderColor: 'primary.main',
+                borderWidth: 1,
+              },
+              '&.Mui-focused': { outline: 'none' },
+            },
+            '& .MuiInputLabel-root': { fontSize: 14 },
+          }}
+        >
           <InputLabel>Status</InputLabel>
           <Select
             value={statusFilter.value}
             label='Status'
             onChange={(e) => statusFilter.onChange(e.target.value)}
-            sx={{
-              borderRadius: 2,
-            }}
           >
             {statusFilter.options.map((option) => (
-              <MenuItem key={option.value} value={option.value}>
+              <MenuItem key={option.value} value={option.value} sx={{ fontSize: 14 }}>
                 {option.label}
               </MenuItem>
             ))}
@@ -60,16 +113,23 @@ export function FilterBar({
         variant='outlined'
         onClick={onSearch}
         sx={{
-          borderRadius: 25,
+          height: FILTER_HEIGHT,
+          minWidth: 100,
+          borderRadius: INPUT_RADIUS,
           textTransform: 'none',
-          fontWeight: 700,
-          px: 3,
+          fontWeight: 600,
+          fontSize: 14,
+          px: 2,
           color: 'primary.main',
-          borderColor: 'primary.main',
+          borderColor: INPUT_BORDER,
+          boxShadow: 'none',
           '&:hover': {
-            borderColor: 'primary.main',
-            backgroundColor: 'rgba(0, 0, 0, 0.03)',
+            borderColor: INPUT_BORDER_HOVER,
+            backgroundColor: RGBA_COLORS.lightHover,
+            boxShadow: 'none',
           },
+          '&:focus': { outline: 'none' },
+          '&:focus-visible': { outline: 'none', borderColor: 'primary.main' },
         }}
       >
         Search

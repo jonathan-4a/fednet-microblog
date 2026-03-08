@@ -72,80 +72,93 @@ export function SettingsPage() {
 
   return (
     <Box>
-      <Typography variant='h5' gutterBottom sx={{ fontWeight: 700 }}>
+      <Typography
+        sx={{
+          fontSize: 20,
+          fontWeight: 700,
+          letterSpacing: '-0.02em',
+          color: 'text.primary',
+          mb: 2,
+        }}
+      >
         Settings
       </Typography>
 
       {error && (
-        <Alert severity='error' sx={{ mb: 2 }}>
+        <Alert severity='error' sx={{ mb: 1.5, '& .MuiAlert-message': { fontSize: 13 } }}>
           {error.message}
         </Alert>
       )}
 
       {success && (
-        <Alert severity='success' sx={{ mb: 2 }}>
+        <Alert severity='success' sx={{ mb: 1.5, '& .MuiAlert-message': { fontSize: 13 } }}>
           Settings saved successfully
         </Alert>
       )}
 
       <Paper
         sx={{
-          p: 3,
-          mt: 2,
+          p: 2.5,
+          mt: 1.5,
           border: '1px solid',
           borderColor: 'rgba(0, 0, 0, 0.08)',
           boxShadow: 'none',
+          borderRadius: 2,
         }}
       >
         <FormControlLabel
           control={
             <Switch
+              size='small'
               checked={localSettings?.registration_mode === 'invite'}
               onChange={handleChange('registration_mode')}
             />
           }
-          label='Invite-only Registration'
+          label={<span style={{ fontSize: 13 }}>Invite-only Registration</span>}
         />
 
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 1.5 }}>
           <FormControlLabel
             control={
               <Switch
+                size='small'
                 checked={localSettings?.allow_public_peers ?? false}
                 onChange={handleChange('allow_public_peers')}
               />
             }
-            label='Allow Public Peers'
+            label={<span style={{ fontSize: 13 }}>Allow Public Peers</span>}
           />
         </Box>
 
-        <Box sx={{ mt: 2 }}>
+        <Box sx={{ mt: 1.5 }}>
           <FormControlLabel
             control={
               <Switch
+                size='small'
                 checked={localSettings?.auto_fetch_peer_links ?? false}
                 onChange={handleChange('auto_fetch_peer_links')}
               />
             }
-            label='Auto Fetch Peer Links'
+            label={<span style={{ fontSize: 13 }}>Auto Fetch Peer Links</span>}
           />
         </Box>
 
-        <Box sx={{ mt: 3 }}>
+        <Box sx={{ mt: 2.5 }}>
           <Button
             variant='contained'
+            size='small'
             onClick={handleSave}
             disabled={saving}
             sx={{
               borderRadius: 25,
               textTransform: 'none',
-              fontWeight: 700,
-              px: 3,
+              fontWeight: 600,
+              fontSize: 13,
+              px: 2.5,
+              py: 0.75,
               color: '#fff',
-              backgroundColor: 'primary.main',
-              '&:hover': {
-                backgroundColor: 'primary.dark',
-              },
+              boxShadow: 'none',
+              '&:hover': { boxShadow: 'none', filter: 'brightness(0.97)' },
             }}
           >
             {saving ? 'Saving...' : 'Save Settings'}

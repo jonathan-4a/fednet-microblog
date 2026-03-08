@@ -14,6 +14,7 @@ import {
 } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import PersonIcon from '@mui/icons-material/Person'
+import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import LogoutIcon from '@mui/icons-material/Logout'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import EditIcon from '@mui/icons-material/Edit'
@@ -55,6 +56,9 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
       label: 'Profile',
       path: user ? `/profile/${user.username}` : '/login',
     },
+    ...(user?.isAdmin
+      ? [{ icon: <AdminPanelSettingsIcon />, label: 'Admin', path: '/admin' as const }]
+      : []),
   ]
 
   if (!isAuthenticated) {
