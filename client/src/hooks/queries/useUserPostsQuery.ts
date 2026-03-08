@@ -9,7 +9,7 @@ import { API_BASE } from '../../config'
 interface UseUserPostsResult {
   posts: Post[]
   replies: Post[]
-  totalItems: number
+  totalItems?: number
   next?: string | null
   private?: boolean
 }
@@ -24,7 +24,7 @@ export function useUserPostsQuery(
     queryKey: ['posts', username, profile?.outbox, currentUser?.username],
     queryFn: async ({ pageParam }) => {
       if (!username && !profile) {
-        return { posts: [], replies: [], totalItems: 0 }
+        return { posts: [], replies: [] }
       }
 
       // Extract username from profile if not provided

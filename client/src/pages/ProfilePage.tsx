@@ -73,7 +73,7 @@ export function ProfilePage() {
 
   const { data: postsData, isLoading: postsLoading, refetch: refetchPosts } = useUserPostsQuery(username, profile)
 
-  const postsCount = postsLoading ? undefined : (postsData?.pages?.[0]?.totalItems ?? 0)
+  const postsCount = postsLoading ? undefined : postsData?.pages?.[0]?.totalItems
 
   // Reset to Posts tab (index 0) when username or profile changes
   useEffect(() => {

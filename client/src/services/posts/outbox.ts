@@ -22,7 +22,7 @@ export async function getUserPosts(
 ): Promise<{
   posts: Post[]
   replies: Post[]
-  totalItems: number
+  totalItems?: number
   next?: string | null
   private?: boolean
 }> {
@@ -47,7 +47,7 @@ export async function getUserPosts(
   } catch (e) {
     const err = e as { status?: number }
     if (err && typeof err === 'object' && err.status === 403) {
-      return { posts: [], replies: [], totalItems: 0, private: true }
+      return { posts: [], replies: [], private: true }
     }
     throw e
   }
@@ -197,14 +197,14 @@ export async function getUserPosts(
       totalItems = firstPage.totalItems
     }
   }
-  // Don't use orderedItems.length as fallback - it's misleading when we only have the first page
-  // If totalItems is missing, we'll return 0 and let the UI handle it
-  // The actual total should come from the collection, not the first page count
+  // If totalItems is missing (e.g. server doesn't send it), don't default to 0 so the UI can show nothing instead of "0 Posts"
+  const resolvedTotalItems =
+    totalItems !== undefined && totalItems !== null ? totalItems : undefined
 
   return {
     posts,
     replies,
-    totalItems: totalItems ?? 0,
+    ...(resolvedTotalItems !== undefined && { totalItems: resolvedTotalItems }),
     next,
   }
 }

@@ -338,10 +338,12 @@ export function PostCard({
             )}
           </Box>
           <Typography
+            component="div"
             sx={{
               fontSize: 15,
               color: 'text.primary',
               whiteSpace: 'pre-wrap',
+              overflowWrap: 'break-word',
               wordBreak: 'break-word',
               mb: 2,
               lineHeight: 1.5,

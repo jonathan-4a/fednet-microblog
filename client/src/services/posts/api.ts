@@ -3,6 +3,7 @@ import { apiRequest } from '../apiClient'
 import { API_BASE } from '../../config'
 import { useAuthStore } from '../../stores/authStore'
 import {
+  ACTIVITY_STREAMS_CONTEXT,
   createNote,
   createCreateActivity,
   createAnnounceActivity,
@@ -306,6 +307,20 @@ export async function getPostRepliesDetails(
 }> {
   // Base URL for resolving relative URLs from remote servers (e.g. Mastodon)
   const baseUrl = noteIdUrl
+  const repliesId = `${noteIdUrl}/replies`
+  const emptyReplies: OrderedCollection = {
+    '@context': ACTIVITY_STREAMS_CONTEXT,
+    type: 'OrderedCollection',
+    id: repliesId,
+    totalItems: 0,
+    first: {
+      '@context': ACTIVITY_STREAMS_CONTEXT,
+      type: 'OrderedCollectionPage',
+      id: repliesId,
+      partOf: repliesId,
+      orderedItems: [],
+    },
+  }
 
   // Fetch the Note first to check if it has embedded replies data
   let note: Note | null = null
@@ -366,18 +381,31 @@ export async function getPostRepliesDetails(
         })
       }
     } else {
-      // No replies in Note - use getPostReplies to construct URL
-      repliesCollection = await getPostReplies(noteIdUrl, {
-        page: params?.page,
-        limit: params?.limit,
-      })
+      // No replies in Note - use getPostReplies only for local or /statuses/ URLs.
+      // Remote /objects/... URLs (Mastodon/LitePub) often don't serve replies at /objects/.../replies and return HTML.
+      if (noteIdUrl.includes('/objects/')) {
+        repliesCollection = emptyReplies
+      } else {
+        repliesCollection = await getPostReplies(noteIdUrl, {
+          page: params?.page,
+          limit: params?.limit,
+        })
+      }
     }
   } catch {
-    // Fallback: use getPostReplies which will construct the URL
-    repliesCollection = await getPostReplies(noteIdUrl, {
-    page: params?.page,
-    limit: params?.limit,
-  })
+    // Fallback: avoid getPostReplies for remote /objects/ URLs (server may return HTML)
+    if (noteIdUrl.includes('/objects/')) {
+      repliesCollection = emptyReplies
+    } else {
+      try {
+        repliesCollection = await getPostReplies(noteIdUrl, {
+          page: params?.page,
+          limit: params?.limit,
+        })
+      } catch {
+        repliesCollection = emptyReplies
+      }
+    }
   }
 
   // Handle both embedded first page object and URL string (Mastodon format)
