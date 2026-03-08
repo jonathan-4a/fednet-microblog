@@ -1,14 +1,17 @@
 # ActivityPub Microblogging
 
-A self-hostable microblogging server with ActivityPub federation support. Single codebase with a Bun/Hono API backed by SQLite and a React SPA.
+A self-hostable microblogging server with ActivityPub federation support. Single codebase — a Bun/Hono API backed by SQLite and a React SPA.
 
 ---
 
-## What it does
+## Features
 
-- Users can register, post short notes, follow each other, reply, like, and boost (announce) posts.
-- The server implements ActivityPub (actors, WebFinger, inbox/outbox, HTTP Signatures), so local users can follow and be followed by users on other ActivityPub-compatible servers.
-- The SPA builds into `api/public` so one process serves both the API and the frontend in production.
+- Register, post short notes, reply, like, and boost (announce) posts
+- Follow/unfollow users on the same instance or on remote ActivityPub-compatible servers
+- Full ActivityPub support: actors, WebFinger, inbox/outbox, HTTP Signatures
+- Invite-only or open registration, configurable at runtime
+- Admin panel: manage users, posts, server settings, and invite tokens
+- The SPA builds into `api/public` — one process serves both API and frontend in production
 
 ---
 
@@ -19,12 +22,11 @@ A self-hostable microblogging server with ActivityPub federation support. Single
 | Runtime (API) | [Bun](https://bun.sh) |
 | HTTP framework | [Hono](https://hono.dev) |
 | Database | SQLite via [Kysely](https://kysely.dev) + [@meck93/kysely-bun-sqlite](https://www.npmjs.com/package/@meck93/kysely-bun-sqlite) |
-| Auth | JWT, bcrypt password hashing, per-user RSA key pairs (ActivityPub signing) |
-| Client runtime | Browser; React 19 |
-| Client build | [Vite](https://vitejs.dev) 7 |
-| UI | [MUI](https://mui.com) 7 (Material UI) + Emotion |
+| Auth | JWT, bcrypt password hashing, per-user RSA key pairs |
+| Client | React 19, [Vite](https://vitejs.dev) 7 |
+| UI | [MUI](https://mui.com) 7 + Emotion |
 | Client state | [TanStack Query](https://tanstack.com/query/latest) + [Zustand](https://github.com/pmndrs/zustand) |
-| Client routing | [React Router](https://reactrouter.com) 7 |
+| Routing | [React Router](https://reactrouter.com) 7 |
 
 ---
 
@@ -40,8 +42,8 @@ docs/       — Documentation
 
 ## Prerequisites
 
-- **Bun** — [bun.sh](https://bun.sh). Required to run the API.
-- **Node.js 18+** — Required to install and build the client (npm + Vite).
+- **Bun** — [bun.sh](https://bun.sh) — required to run the API
+- **Node.js 18+** — required to install and build the client
 
 ---
 
@@ -52,18 +54,24 @@ docs/       — Documentation
 ```bash
 cd api
 cp .env.example .env
-# Edit .env — see Configuration section below
+# Edit .env — see Configuration below
 bun install
 bun run start:dev
 ```
 
-On startup the server:
-- Creates the SQLite file at `DB_PATH` if it does not exist and runs `ensureSchema`.
-- Ensures a single row in `server_settings` (seeded from env defaults if not present).
-- Runs admin bootstrap: creates the user specified by `ADMIN_USER` / `ADMIN_PASS` if that username does not exist yet.
-- Listens on `PORT`.
+On startup the server will:
 
-Verify: `curl http://localhost:3000/api/health` → `{"status":"ok"}`
+- Create the SQLite file at `DB_PATH` if it does not exist
+- Run `ensureSchema` to create all tables
+- Seed a `server_settings` row from env defaults if one does not exist
+- Create the bootstrap admin user from `ADMIN_USER` / `ADMIN_PASS` if that username does not exist
+
+Verify the server is running:
+
+```bash
+curl http://localhost:3000/api/health
+# {"status":"ok"}
+```
 
 ### 2. Client
 
@@ -73,20 +81,20 @@ npm install
 npm run dev
 ```
 
-Vite starts a dev server at `http://localhost:5173`. The client talks to the API at `API_BASE` (default `http://localhost:3000`; see `client/src/config.ts`).
+Vite starts at `http://localhost:5173` and proxies API calls to `API_BASE` (default `http://localhost:3000`).
 
 ---
 
 ## Configuration
 
-### API environment variables (`api/.env`)
+### API — `api/.env`
 
-Bun loads `.env` automatically. Copy `api/.env.example` to `api/.env` and fill in:
+Copy `api/.env.example` to `api/.env`. Bun loads it automatically.
 
 | Variable | Required | Description |
 |---|---|---|
 | `PORT` | Yes | TCP port the server listens on (e.g. `3000`) |
-| `DOMAIN` | Yes | Public hostname used in actor URLs and HTTP Signatures (e.g. `localhost` or `example.com`) |
+| `DOMAIN` | Yes | Public hostname for actor URLs and HTTP Signatures (e.g. `example.com`) |
 | `PROTOCOL` | Yes | `http` or `https` |
 | `NODE_ENV` | Yes | `development` or `production` |
 | `DB_PATH` | Yes | Path to the SQLite file (e.g. `./node.db`) |
@@ -95,20 +103,20 @@ Bun loads `.env` automatically. Copy `api/.env.example` to `api/.env` and fill i
 | `JWT_SECRET` | Yes | Secret used to sign and verify JWTs |
 | `ADMIN_DISPLAY_NAME` | No | Display name for the bootstrap admin (default: `"admin"`) |
 | `ADMIN_SUMMARY` | No | Bio for the bootstrap admin (default: `"Server Administrator"`) |
-| `REGISTRATION_MODE` | No | `open` or `invite`; only read when `server_settings` row is first created |
-| `ALLOW_PUBLIC_PEERS` | No | `true`/`false`; default `true` |
-| `AUTO_FETCH_PEER_LINKS` | No | `true`/`false`; default `false` |
+| `REGISTRATION_MODE` | No | `open` or `invite` — seeded on first run only (default: `open`) |
+| `ALLOW_PUBLIC_PEERS` | No | `true` / `false` — seeded on first run only (default: `true`) |
+| `AUTO_FETCH_PEER_LINKS` | No | `true` / `false` — seeded on first run only (default: `false`) |
 
-`REGISTRATION_MODE`, `ALLOW_PUBLIC_PEERS`, and `AUTO_FETCH_PEER_LINKS` are seeded into the database on first run. After that, use `PATCH /api/admin/settings` to change them; the env vars are no longer read.
+> `REGISTRATION_MODE`, `ALLOW_PUBLIC_PEERS`, and `AUTO_FETCH_PEER_LINKS` are only read when the `server_settings` row is first created. After that, use `PATCH /api/admin/settings` to update them.
 
-### Client config (`client/src/config.ts`)
+### Client — `client/src/config.ts`
 
 | Export | Description | Default |
 |---|---|---|
 | `API_BASE` | Base URL for all API requests | `http://localhost:3000` |
 | `ENV` | Environment label | `'development'` |
 
-Change `API_BASE` and rebuild to point the client at a different host. In production the SPA is typically served from the same origin as the API:
+For production, set `API_BASE` to the server's public origin or use:
 
 ```ts
 export const API_BASE = import.meta.env.PROD ? window.location.origin : "http://localhost:3000"
@@ -147,27 +155,39 @@ export const API_BASE = import.meta.env.PROD ? window.location.origin : "http://
 
 ## Database
 
-SQLite, single file. Schema is managed via `ensureSchema()` on startup — `CREATE TABLE IF NOT EXISTS` for all tables; no migration system. Tables: `users`, `credentials`, `token_blacklist`, `server_settings`, `invite_tokens`, `posts`, `announces`, `likes`, `follows`.
+- Single SQLite file; path set via `DB_PATH`
+- Schema applied on startup via `ensureSchema()` — `CREATE TABLE IF NOT EXISTS`; no migration system
+- Tables: `users`, `credentials`, `token_blacklist`, `server_settings`, `invite_tokens`, `posts`, `announces`, `likes`, `follows`
 
-Notable: the `follows` table is **dropped and recreated** on every startup to enforce the actor-URL-based schema (migrating from an older username-based layout). Any existing follow rows are lost on restart if the old schema is in place.
+> **Note:** The `follows` table is dropped and recreated on every startup to enforce the actor-URL-based schema. Existing follow rows will be lost if the old username-based schema is present.
 
-Backup: copy the SQLite file. No built-in backup tooling.
+Backup by copying the SQLite file. No built-in backup tooling is provided.
 
 ---
 
 ## ActivityPub
 
-Each user gets an actor document at `GET /u/:username` (`application/activity+json`). Per-user RSA key pairs are stored in `credentials` and used to sign outbound HTTP requests (fan-out, follow delivery).
+Each user is an ActivityPub Actor with a per-user RSA key pair stored in `credentials`, used to sign all outbound requests.
 
-**Federation flow (outbound):** local user creates a post → `post.created` event → `FanOutActivity` delivers a `Create` activity to each remote follower's inbox, signed with the author's private key.
+| Endpoint | Method | Auth | Purpose |
+|---|---|---|---|
+| `/.well-known/webfinger` | GET | None | Actor discovery |
+| `/u/:username` | GET | None | Actor document |
+| `/u/:username/outbox` | GET | None | User's activity collection |
+| `/u/:username/outbox` | POST | Bearer | Submit `Create`, `Follow`, `Announce` (C2S) |
+| `/u/:username/inbox` | POST | HTTP Signature | Receive activities from remote servers (S2S) |
 
-**Federation flow (inbound):** remote server `POST /u/:username/inbox` with an HTTP Signature → `SignatureGuard` fetches the sender's actor and verifies the signature → activity dispatched to handlers (`HandleS2SFollowActivity`, `HandleS2SCreateActivity`, `HandleS2SAnnounceActivity`).
+**Outbound federation**
 
-**C2S:** authenticated users `POST /u/:username/outbox` with a `Create`, `Follow`, or `Announce` activity. Handlers process and dispatch accordingly.
+- Local post created → `post.created` event → `FanOutActivity` delivers a signed `Create` activity to each remote follower's inbox
 
-**Browser proxy:** `GET /api/proxy?url=<encoded>` (Bearer required) lets the SPA fetch remote ActivityPub resources through the server, avoiding CORS issues.
+**Inbound federation**
 
-WebFinger is available at `GET /.well-known/webfinger?resource=acct:user@domain` for actor discovery.
+- Remote `POST /u/:username/inbox` → `SignatureGuard` fetches the sender's actor and verifies the HTTP Signature → activity dispatched to the appropriate S2S handler
+
+**Browser proxy**
+
+- `GET /api/proxy?url=<encoded>` (Bearer required) — server fetches the remote ActivityPub resource on behalf of the client, avoiding CORS issues
 
 ---
 
@@ -182,19 +202,18 @@ cd api && bun install && bun run build
 # Build client (outputs to api/public)
 cd ../client && npm install && npm run build
 
-# (Optional) generate merged OpenAPI spec
+# Optional: generate merged OpenAPI spec
 cd ../api && node docs/mergeOpenapi.js
 
-# Run
-cd api
+# Start
 NODE_ENV=production bun run start:prod
 ```
 
-Place a reverse proxy (nginx, Caddy) in front to handle TLS and forward to `http://127.0.0.1:PORT`. Set `DOMAIN` and `PROTOCOL=https` to match the public URL; actor URLs and HTTP Signatures depend on these values being correct.
+Place nginx or Caddy in front for TLS termination, proxying to `http://127.0.0.1:PORT`. `DOMAIN` and `PROTOCOL` must match the public URL for actor URLs and HTTP Signatures to be valid.
 
 ### Docker (multi-instance)
 
-The repo includes a Compose setup under `api/docker/` that runs three independent instances behind nginx — useful for testing federation locally.
+A Compose setup under `api/docker/` runs three independent instances behind nginx, intended for local federation testing.
 
 ```bash
 cd api
@@ -203,56 +222,45 @@ docker-compose -f docker/docker-compose.yml build
 docker-compose -f docker/docker-compose.yml up -d
 ```
 
-Each instance has its own `DOMAIN`, `DB_PATH`, and data volume. Add `127.0.0.1 instance1 instance2 instance3` to `/etc/hosts` to resolve them from the host.
+Add the following to `/etc/hosts` to resolve instances from the host:
+
+```
+127.0.0.1 instance1 instance2 instance3
+```
+
+Each instance requires its own `DOMAIN`, `DB_PATH`, and data volume configured in `docker-compose.yml`.
 
 ### Production checklist
 
-- Set `PROTOCOL=https` and terminate TLS at the reverse proxy.
-- Use a strong, unique `JWT_SECRET` per instance.
-- Set `DOMAIN` to the public hostname; DNS must point to the server.
-- Place `DB_PATH` on a persistent volume with read/write access for the process user.
-- Back up the SQLite file regularly (no built-in script provided).
-- Capture and rotate stdout/stderr logs via your process manager.
-- On updates: `bun install`, `bun run build` in `api/`; `npm run build` in `client/`; restart the server. Schema is `CREATE IF NOT EXISTS`; no migration tooling — test schema changes against a copy of the database before deploying.
+- `PROTOCOL=https` with TLS termination at the reverse proxy
+- Strong, unique `JWT_SECRET` per instance
+- `DOMAIN` set to the public hostname with DNS pointing to the server
+- `DB_PATH` on a persistent volume with read/write permissions for the process user
+- Regular backups of the SQLite file
+- stdout/stderr captured and rotated via a process manager
+- On updates: `bun install` + `bun run build` in `api/`, `npm run build` in `client/`, then restart — no migration tooling, test schema changes against a copy of the database first
 
 ---
 
 ## Tests
-
-Unit and integration tests are under `api/tests/`. Run with Bun's test runner:
 
 ```bash
 cd api
 bun test
 ```
 
-Integration tests in `api/tests/integration/test_endpoints.sh` hit real HTTP endpoints and require a running server.
+Unit and integration tests are under `api/tests/`. Integration tests in `api/tests/integration/test_endpoints.sh` require a running server.
 
 ---
 
 ## Troubleshooting
 
-| Error | Cause / Fix |
+| Symptom | Fix |
 |---|---|
-| `DB_PATH environment variable is not set` | Set `DB_PATH` in `.env` or the shell environment |
-| `ADMIN_USER and ADMIN_PASS environment variables are required` | Set both in `.env` for admin bootstrap |
-| `DOMAIN and PROTOCOL must be configured` | Set `DOMAIN` and `PROTOCOL` in env; required for any endpoint that builds absolute URLs |
-| `401` on protected routes | Send `Authorization: Bearer <token>`; token from `POST /api/auth/login`. If logged out, the token is blacklisted — log in again |
-| `403` on admin routes | The authenticated user needs `is_admin`; the bootstrap admin has it by default |
-| Client cannot reach API | Check `API_BASE` in `client/src/config.ts`, confirm CORS is enabled, and confirm the API is listening on the expected host/port |
-| OpenAPI or docs `404` | Run `merge-docs` and ensure the output file is where `AppController` expects it; confirm `public/apiDocs.html` exists |
-
----
-
-## Documentation
-
-Additional detail is in `docs/`:
-
-- `02-architecture.md` — Module layout, request flow, event bus
-- `03-api-reference.md` — All endpoints with request/response shapes
-- `04-database.md` — Table schemas and relationships
-- `05-configuration.md` — Full env variable reference
-- `06-setup-and-development.md` — Dev workflow and scripts
-- `07-deployment.md` — Single-server and Docker deployment
-- `08-client.md` — SPA structure, routing, services, hooks
-- `09-activitypub.md` — ActivityPub and federation implementation detail
+| `DB_PATH environment variable is not set` | Set `DB_PATH` in `.env` or the shell |
+| `ADMIN_USER and ADMIN_PASS environment variables are required` | Set both in `.env` |
+| `DOMAIN and PROTOCOL must be configured` | Set `DOMAIN` and `PROTOCOL` in env |
+| `401` on protected routes | Send `Authorization: Bearer <token>` — token from `POST /api/auth/login`; re-login if previously logged out |
+| `403` on admin routes | Authenticated user must have `is_admin`; the bootstrap admin has it by default |
+| Client cannot reach API | Check `API_BASE` in `client/src/config.ts`, confirm CORS is enabled, confirm the API is on the expected host/port |
+| OpenAPI or docs `404` | Run `merge-docs` and confirm the output is where `AppController` expects it; confirm `public/apiDocs.html` exists |
