@@ -39,4 +39,3 @@ export class UpdateServerSettings implements IUpdateServerSettings {
     return await this.serverSettingsRepository.saveSettings(merged);
   }
 }
-

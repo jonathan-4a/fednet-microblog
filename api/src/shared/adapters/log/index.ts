@@ -29,37 +29,3 @@ export function createLogger(
     },
   };
 }
-
-// Default logger instance
-export const logger: ILogger = {
-  info(message: string, ...meta: unknown[]) {
-    console.info(message, ...meta);
-  },
-  error(message: string, trace?: string, ...meta: unknown[]) {
-    if (trace) {
-      console.error(`${message}\n${trace}`, ...meta);
-    } else {
-      console.error(message, ...meta);
-    }
-  },
-  warn(message: string, ...meta: unknown[]) {
-    console.warn(message, ...meta);
-  },
-};
-
-export function createRequestLogger(_env?: string, _logPath?: string) {
-  void _env;
-  void _logPath;
-
-  return (req: Request) => {
-    const start = process.hrtime.bigint();
-    const { method } = req;
-    const { pathname } = new URL(req.url);
-
-    const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
-
-    console.log(`[HTTP] ${method} ${pathname} ${durationMs.toFixed(2)}ms`);
-  };
-}
-
-

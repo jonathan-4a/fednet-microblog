@@ -59,4 +59,3 @@ export class ServerSettingsRepository<
     return settings;
   }
 }
-

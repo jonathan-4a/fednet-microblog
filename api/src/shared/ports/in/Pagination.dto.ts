@@ -11,4 +11,3 @@ export interface PaginatedResponseDto<T> {
   items: T[];
   pagination: PaginationDto;
 }
-
