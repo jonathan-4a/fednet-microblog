@@ -9,4 +9,3 @@ export interface GetUserProfileInput {
 export interface IGetUserProfile {
   execute(input: GetUserProfileInput): Promise<AuthenticatedUserOutput>;
 }
-

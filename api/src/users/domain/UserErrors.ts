@@ -28,4 +28,3 @@ export class ValidationError extends DomainError {
     super(message);
   }
 }
-

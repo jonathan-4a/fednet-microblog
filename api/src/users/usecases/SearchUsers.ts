@@ -26,4 +26,3 @@ export class SearchUsers implements ISearchUsers {
     };
   }
 }
-

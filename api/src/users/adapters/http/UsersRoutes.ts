@@ -14,7 +14,10 @@ type Variables = {
   user: AuthTokenPayload;
 };
 
-export type AuthMiddleware = (c: Context, next: Next) => Promise<Response | void>;
+export type AuthMiddleware = (
+  c: Context,
+  next: Next,
+) => Promise<Response | void>;
 
 export function createUsersRoutes(
   getUserProfile: IGetUserProfile,
@@ -44,4 +47,3 @@ export function createUsersRoutes(
 
   return app;
 }
-

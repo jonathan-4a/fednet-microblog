@@ -87,4 +87,3 @@ export class UserController {
     return c.json(result, 201);
   }
 }
-
