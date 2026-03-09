@@ -4,5 +4,5 @@ import type { DispatchC2SActivityEventInput } from "./ActivityPub.dto";
 
 export interface IDispatchC2SActivityEvent {
   execute(input: DispatchC2SActivityEventInput): void;
+  executeAndAwait(input: DispatchC2SActivityEventInput): Promise<void>;
 }
-

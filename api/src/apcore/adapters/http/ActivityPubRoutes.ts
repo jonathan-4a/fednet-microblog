@@ -23,6 +23,9 @@ export function createActivityPubRoutes(
   getOutbox: IGetOutbox,
   dispatchS2SActivityEvent: IDispatchS2SActivityEvent,
   dispatchC2SActivityEvent: IDispatchC2SActivityEvent,
+  host: string,
+  protocol: string,
+  domain: string,
   postOutboxAuthMiddleware?: AuthMiddleware,
 ) {
   const app = new Hono<{
@@ -36,6 +39,9 @@ export function createActivityPubRoutes(
     getOutbox,
     dispatchS2SActivityEvent,
     dispatchC2SActivityEvent,
+    host,
+    protocol,
+    domain,
   );
 
   app.get(ActivityPubUrls.webfinger, (c) => controller.webfinger(c));
@@ -53,4 +59,3 @@ export function createActivityPubRoutes(
 
   return app;
 }
-

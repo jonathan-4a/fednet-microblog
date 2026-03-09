@@ -13,6 +13,7 @@ export { FanOutActivity } from "./usecases/FanOutActivity";
 export { Actor } from "./adapters/serializers/Actor";
 export { Note } from "./adapters/serializers/Note";
 export { Collection } from "./adapters/serializers/Collection";
+export { WebFinger } from "./adapters/serializers/WebFinger";
 export { Activity } from "./adapters/serializers/Activity";
 
 // Export adapters
@@ -25,9 +26,12 @@ export { SignatureGuard } from "./adapters/http/SignatureGuard";
 export { HandleC2SFollowActivity } from "./handlers/HandleC2SFollowActivity";
 export { HandleC2SCreateActivity } from "./handlers/HandleC2SCreateActivity";
 export { HandleC2SAnnounceActivity } from "./handlers/HandleC2SAnnounceActivity";
+export { HandleC2SLikeActivity } from "./handlers/HandleC2SLikeActivity";
 export { HandleS2SFollowActivity } from "./handlers/HandleS2SFollowActivity";
 export { HandleS2SCreateActivity } from "./handlers/HandleS2SCreateActivity";
 export { HandleS2SAnnounceActivity } from "./handlers/HandleS2SAnnounceActivity";
+export { HandleS2SLikeActivity } from "./handlers/HandleS2SLikeActivity";
+export { HandlePostCreated } from "./handlers/HandlePostCreated";
 
 // Export factory functions from di.ts
 export {
@@ -35,6 +39,7 @@ export {
   createGetActor,
   createGetOutbox,
   createGetRemoteResource,
+  createResolveNoteAuthorActor,
   createDispatchS2SActivityEvent,
   createDispatchC2SActivityEvent,
   createFanOutActivity,
@@ -63,6 +68,8 @@ export type {
   IWebFingerSerializer,
   WebFingerDocument,
 } from "./ports/out/IWebFingerSerializer";
+export type { IResolveNoteAuthorActor } from "./ports/out/IResolveNoteAuthorActor";
+export type { INotificationActivityEmitter } from "./ports/out/INotificationActivityEmitter";
 export type {
   NoteOutput,
   OrderedCollectionOutput,
@@ -71,4 +78,3 @@ export type {
 export { InternalServerError } from "./domain/ActivityPubErrors";
 export type { C2SActivitySubmittedEvent } from "./domain/events/C2SActivitySubmittedEvent";
 export type { ActivityReceivedEvent } from "./domain/events/ActivityReceivedEvent";
-
