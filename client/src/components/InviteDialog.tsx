@@ -94,17 +94,36 @@ export function InviteDialog({ open, onClose }: InviteDialogProps) {
             <Typography variant='body2' color='text.secondary' sx={{ mb: 1 }}>
               Share this link with others to allow them to register:
             </Typography>
-            <Box sx={{ display: 'flex', gap: 1, alignItems: 'center' }}>
+            <Box
+              sx={{
+                display: 'flex',
+                alignItems: 'center',
+                gap: 1,
+              }}
+            >
               <TextField
                 fullWidth
                 value={inviteLink}
                 size='small'
+                InputProps={{ readOnly: true }}
+                sx={{
+                  '& .MuiInputBase-input': {
+                    fontSize: 13,
+                  },
+                }}
               />
               <IconButton
                 onClick={handleCopyToClipboard}
                 color={copied ? 'success' : 'default'}
+                size='small'
+                sx={{
+                  borderRadius: 1.5,
+                  border: '1px solid',
+                  borderColor: copied ? 'success.main' : 'divider',
+                  p: 0.75,
+                }}
               >
-                <ContentCopyIcon />
+                <ContentCopyIcon fontSize='small' />
               </IconButton>
             </Box>
             {copied && (

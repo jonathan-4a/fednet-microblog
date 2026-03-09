@@ -3,6 +3,8 @@ import { useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { useProfileQuery } from './queries/useProfileQuery'
 import { useFollowersQuery } from './queries/useFollowersQuery'
 import { useFollowingQuery } from './queries/useFollowingQuery'
+import { useMastodonAccountCountsQuery } from './queries/useMastodonAccountCountsQuery'
+import { resolveUrl } from '../services/posts/utils'
 import { useCurrentUserProfileQuery } from './queries/useCurrentUserProfileQuery'
 import type { OrderedCollection, OrderedCollectionPage } from '../types/activitypub'
 import { ACTIVITY_STREAMS_CONTEXT } from '../types/activitypub'
@@ -27,16 +29,27 @@ export function useProfileDataQuery() {
     isRemote ? remoteActorUrl : undefined
   )
 
-  // Use profile URLs if available, otherwise build from username
-  // Unified fetcher handles local/remote automatically
+  const baseId = profile?.id?.replace(/\/$/, '') ?? ''
+  const followersUrl = profile?.followers
+    ? (profile.id ? resolveUrl(profile.followers, profile.id) : profile.followers)
+    : (baseId ? `${baseId}/followers` : undefined)
+  const followingUrl = profile?.following
+    ? (profile.id ? resolveUrl(profile.following, profile.id) : profile.following)
+    : (baseId ? `${baseId}/following` : undefined)
+
   const followersQuery = useFollowersQuery(
     isRemote ? undefined : username,
-    profile?.followers
+    followersUrl
   )
 
   const followingQuery = useFollowingQuery(
     isRemote ? undefined : username,
-    profile?.following
+    followingUrl
+  )
+
+  const { data: mastodonCounts } = useMastodonAccountCountsQuery(
+    profile?.id,
+    isRemote && !!profile?.id
   )
 
   const { data: currentUserProfile, refetch: refetchCurrentUserProfile } =
@@ -44,7 +57,6 @@ export function useProfileDataQuery() {
 
   const currentUser = useAuthStore((state) => state.user)
 
-  // Get current user's Actor profile to get their following URL
   const { data: currentUserActor } = useProfileQuery(
     currentUser?.username,
     undefined
@@ -55,23 +67,18 @@ export function useProfileDataQuery() {
     currentUserActor?.following
   )
 
-  // Flatten infinite query pages into a single collection
   const flattenCollection = (pages: (OrderedCollection | OrderedCollectionPage | (Record<string, unknown> & { _collectionPrivate?: boolean }) | null)[] | undefined): (OrderedCollection & { _collectionPrivate?: boolean }) | null => {
     if (!pages || pages.length === 0) return null
     
-    // Get the first page to get collection metadata
     const firstPage = pages[0]
     if (!firstPage) return null
 
-    // Check if collection is private (403 from server)
     const isPrivate = pages.some((p) => p && typeof p === 'object' && '_collectionPrivate' in p && (p as { _collectionPrivate?: boolean })._collectionPrivate === true)
 
-    // Collect all orderedItems from all pages
     const allItems: unknown[] = []
     let totalItems = 0
     const collectionId = firstPage.id
 
-    // If first page is OrderedCollection, get totalItems from it
     if ('totalItems' in firstPage && typeof (firstPage as OrderedCollection).totalItems === 'number') {
       totalItems = (firstPage as OrderedCollection).totalItems || 0
     }
@@ -83,26 +90,22 @@ export function useProfileDataQuery() {
       }
     }
 
-    // If totalItems was missing (e.g. server returned only a page), use loaded count so the tab count is correct
     if (totalItems === 0 && allItems.length > 0) {
       totalItems = allItems.length
     }
 
     const lastPage = pages[pages.length - 1]
     let nextPageUrl: string | undefined = undefined
-    
+
     if (lastPage) {
-      // Check if lastPage has 'next' property (OrderedCollectionPage)
       if ('next' in lastPage && typeof lastPage.next === 'string') {
         nextPageUrl = lastPage.next
       }
-      // Or check if it's an OrderedCollection with first page that has next
       else if ('first' in lastPage && typeof lastPage.first === 'object' && lastPage.first && 'next' in lastPage.first) {
         nextPageUrl = (lastPage.first as OrderedCollectionPage).next || undefined
       }
     }
 
-    // Build the result as OrderedCollection
     const result: OrderedCollection & { _collectionPrivate?: boolean } = {
       '@context': (firstPage['@context'] ?? ACTIVITY_STREAMS_CONTEXT) as string | string[],
       type: 'OrderedCollection',
@@ -111,7 +114,6 @@ export function useProfileDataQuery() {
       orderedItems: allItems,
     }
     
-    // Add next as a custom property for pagination
     if (nextPageUrl) {
       (result as OrderedCollection & { next?: string }).next = nextPageUrl
     }
@@ -125,9 +127,11 @@ export function useProfileDataQuery() {
 
   const currentUserFollowing = flattenCollection(currentUserFollowingQuery.data?.pages)
 
-  // When the list fetch returns 403 (forbidden), show "Private" even if we have no data
-  const is403 = (err: unknown) =>
-    err && typeof err === 'object' && 'status' in err && (err as { status?: number }).status === 403
+  const isPrivateError = (err: unknown) => {
+    if (!err || typeof err !== 'object' || !('status' in err)) return false
+    const status = (err as { status?: number }).status
+    return status === 401 || status === 403
+  }
   const privatePlaceholder = (id: string): OrderedCollection & { _collectionPrivate: true } => ({
     '@context': 'https://www.w3.org/ns/activitystreams',
     type: 'OrderedCollection',
@@ -137,16 +141,50 @@ export function useProfileDataQuery() {
     _collectionPrivate: true,
   })
 
-  const followers =
+  const followersRaw =
     flattenCollection(followersQuery.data?.pages) ??
-    (followersQuery.isError && is403(followersQuery.error)
-      ? privatePlaceholder(profile?.followers ?? '')
+    (followersQuery.isError && isPrivateError(followersQuery.error)
+      ? privatePlaceholder(followersUrl ?? '')
       : null)
-  const following =
+  const followingRaw =
     flattenCollection(followingQuery.data?.pages) ??
-    (followingQuery.isError && is403(followingQuery.error)
-      ? privatePlaceholder(profile?.following ?? '')
+    (followingQuery.isError && isPrivateError(followingQuery.error)
+      ? privatePlaceholder(followingUrl ?? '')
       : null)
+
+  // When list is private: still show count if we have one (e.g. Mastodon); when opened show "Private". When no count and private, show no number.
+  const followers = followersRaw
+    ? {
+        ...followersRaw,
+        totalItems: followersRaw._collectionPrivate
+          ? (mastodonCounts?.followers_count ?? undefined)
+          : (followersRaw.totalItems ?? mastodonCounts?.followers_count ?? 0),
+      }
+    : mastodonCounts
+      ? ({
+          '@context': ACTIVITY_STREAMS_CONTEXT,
+          type: 'OrderedCollection',
+          id: followersUrl ?? '',
+          orderedItems: [],
+          totalItems: mastodonCounts.followers_count,
+        } as OrderedCollection)
+      : null
+  const following = followingRaw
+    ? {
+        ...followingRaw,
+        totalItems: followingRaw._collectionPrivate
+          ? (mastodonCounts?.following_count ?? undefined)
+          : (followingRaw.totalItems ?? mastodonCounts?.following_count ?? 0),
+      }
+    : mastodonCounts
+      ? ({
+          '@context': ACTIVITY_STREAMS_CONTEXT,
+          type: 'OrderedCollection',
+          id: followingUrl ?? '',
+          orderedItems: [],
+          totalItems: mastodonCounts.following_count,
+        } as OrderedCollection)
+      : null
 
   return {
     profile: profile ?? null,

@@ -1,6 +1,6 @@
 // src/pages/PostDetailPage.tsx
 import { useParams, useNavigate, useSearchParams } from 'react-router-dom'
-import { Box, CircularProgress, Typography, Button } from '@mui/material'
+import { Box, Typography, Button } from '@mui/material'
 import ArrowBackIcon from '@mui/icons-material/ArrowBack'
 import IconButton from '@mui/material/IconButton'
 import { useInView } from 'react-intersection-observer'
@@ -27,7 +27,6 @@ import { logger } from '../utils/logger'
 import { EditPostDialog } from '../components/EditPostDialog'
 import { DeletePostDialog } from '../components/DeletePostDialog'
 import { useSnackbar } from '../hooks/useSnackbar'
-import { SnackbarNotification } from '../components/SnackbarNotification'
 
 export function PostDetailPage() {
   const { username, guid } = useParams<{ username?: string; guid?: string }>()
@@ -44,7 +43,7 @@ export function PostDetailPage() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false)
   const [deletePost, setDeletePost] = useState<Post | null>(null)
   const [isDeleting, setIsDeleting] = useState(false)
-  const { snackbar, showError, closeSnackbar } = useSnackbar()
+  const { showError } = useSnackbar()
 
   const { mutateAsync: updatePostMutation } = useUpdatePostMutation({
     onError: (error) => {
@@ -91,6 +90,16 @@ export function PostDetailPage() {
   const { like, unlike } = useLikeMutation({
     currentUsername: currentUser?.username,
   })
+
+  // Surface load errors via snackbar (message from server); content area shows empty state
+  useEffect(() => {
+    if (!postError) return
+    showError((postError as Error).message || 'Failed to load post.')
+  }, [postError, showError])
+  useEffect(() => {
+    if (!repliesError) return
+    showError((repliesError as Error).message || 'Failed to load replies.')
+  }, [repliesError, showError])
 
   const handleBack = () => {
     navigate(-1)
@@ -155,21 +164,56 @@ export function PostDetailPage() {
     )
   }
 
-  if ((postError || !post) && !isDeleting) {
-    return (
-      <TwitterLayout>
-        <Box sx={{ px: 3, py: 4 }}>
-          <ErrorDisplay message={postError?.message || 'Post not found'} />
-        </Box>
-      </TwitterLayout>
-    )
-  }
-
   if (isDeleting) {
     return (
       <TwitterLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <LoadingSpinner />
+        </Box>
+      </TwitterLayout>
+    )
+  }
+
+  // When the post failed to load, keep the layout but show an empty content area.
+  // The specific error is already shown via snackbar.
+  if (!post && !isDeleting) {
+    return (
+      <TwitterLayout>
+        <Box>
+          <Box
+            sx={{
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'space-between',
+              px: 3,
+              py: 2,
+              borderBottom: '1px solid',
+              borderColor: 'rgba(0, 0, 0, 0.08)',
+            }}
+          >
+            <Box sx={{ display: 'flex', alignItems: 'center' }}>
+              <IconButton
+                onClick={handleBack}
+                sx={{
+                  mr: 2,
+                  color: 'text.primary',
+                }}
+              >
+                <ArrowBackIcon />
+              </IconButton>
+              <Typography
+                sx={{
+                  fontSize: 20,
+                  fontWeight: 700,
+                  color: 'text.primary',
+                }}
+              >
+                Post
+              </Typography>
+            </Box>
+          </Box>
+
+          <EmptyState message='Post is unavailable on this instance.' />
         </Box>
       </TwitterLayout>
     )
@@ -259,13 +303,9 @@ export function PostDetailPage() {
         )}
 
         {repliesLoading ? (
-          <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
-            <CircularProgress size={24} />
-          </Box>
+          <LoadingSpinner size={24} />
         ) : repliesError ? (
-          <Box sx={{ px: 3, py: 2 }}>
-            <ErrorDisplay message={repliesError.message} />
-          </Box>
+          <EmptyState message='Replies are unavailable for this post.' />
         ) : replies.length === 0 ? (
           <Box sx={{ px: 3, py: 4 }}>
             <EmptyState message='No replies yet' />
@@ -280,15 +320,8 @@ export function PostDetailPage() {
               onLike={handleLike}
             />
             {hasNextPage && (
-              <Box
-                ref={loadMoreRef}
-                sx={{
-                  display: 'flex',
-                  justifyContent: 'center',
-                  py: 2,
-                }}
-              >
-                {isFetchingNextPage && <CircularProgress size={24} />}
+              <Box ref={loadMoreRef} sx={{ py: 2 }}>
+                {isFetchingNextPage && <LoadingSpinner size={24} />}
               </Box>
             )}
           </>
@@ -370,12 +403,6 @@ export function PostDetailPage() {
           />
         )}
 
-        <SnackbarNotification
-          open={snackbar.open}
-          message={snackbar.message}
-          severity={snackbar.severity}
-          onClose={closeSnackbar}
-        />
       </Box>
     </TwitterLayout>
   )

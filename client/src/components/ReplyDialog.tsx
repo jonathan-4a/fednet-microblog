@@ -8,7 +8,6 @@ import {
   TextField,
   Box,
   CircularProgress,
-  Alert,
   Typography,
   Avatar,
   Divider,
@@ -32,11 +31,7 @@ export function ReplyDialog({
   onSuccess,
 }: ReplyDialogProps) {
   const [content, setContent] = useState('')
-  const {
-    mutateAsync: submitPost,
-    isPending: loading,
-    error,
-  } = useCreatePostMutation()
+  const { mutateAsync: submitPost, isPending: loading } = useCreatePostMutation()
   const textFieldRef = useRef<HTMLTextAreaElement>(null)
 
   // Auto-focus text field when dialog opens
@@ -149,11 +144,6 @@ export function ReplyDialog({
           <Divider sx={{ my: 1.5 }} />
         </Box>
 
-        {error && (
-          <Alert severity='error' sx={{ mb: 2 }}>
-            {error.message}
-          </Alert>
-        )}
         <TextField
           inputRef={textFieldRef}
           autoFocus

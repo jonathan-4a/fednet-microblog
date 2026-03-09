@@ -11,6 +11,27 @@ export function isRemoteUser(userId: string): boolean {
   }
 }
 
+/**
+ * Get profile URL path from an actor URL (e.g. https://example.com/u/alice -> /profile/alice or /profile/remote?url=...)
+ */
+export function getProfileUrlFromActorUrl(actorUrl: string): string {
+  if (!actorUrl) return '/'
+  if (isRemoteUser(actorUrl)) {
+    return `/profile/remote?url=${encodeURIComponent(actorUrl)}`
+  }
+  try {
+    const url = new URL(actorUrl)
+    const parts = url.pathname.split('/').filter(Boolean)
+    const uIndex = parts.indexOf('u')
+    if (uIndex !== -1 && uIndex < parts.length - 1) {
+      return `/profile/${parts[uIndex + 1]}`
+    }
+  } catch {
+    // fall through
+  }
+  return '/'
+}
+
 export function formatUserAddress(
   userId: string,
   preferredUsername: string

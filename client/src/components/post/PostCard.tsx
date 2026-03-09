@@ -8,6 +8,7 @@ import {
   Menu,
   MenuItem,
 } from '@mui/material'
+import { alpha } from '@mui/material/styles'
 import ChatBubbleOutlineIcon from '@mui/icons-material/ChatBubbleOutline'
 import RepeatIcon from '@mui/icons-material/Repeat'
 import ReplyIcon from '@mui/icons-material/Reply'
@@ -57,8 +58,6 @@ export function PostCard({
   const [menuAnchor, setMenuAnchor] = useState<null | HTMLElement>(null)
   const [isNavigating, setIsNavigating] = useState(false)
 
-  // Use post's author info if available (for liked posts from different users)
-  // Otherwise fall back to props (for user's own posts)
   const displayAuthorUsername = post.author_username || authorUsername
 
   // Use post's author_name if available, otherwise use prop if it matches, otherwise extract username from handle
@@ -410,8 +409,8 @@ export function PostCard({
                 sx={{
                   color: 'text.secondary',
                   '&:hover': {
-                    color: '#00ba7c',
-                    backgroundColor: 'rgba(0, 186, 124, 0.1)',
+                    color: 'primary.main',
+                    backgroundColor: (theme) => alpha(theme.palette.primary.main, 0.1),
                   },
                   transition: 'all 0.2s',
                 }}

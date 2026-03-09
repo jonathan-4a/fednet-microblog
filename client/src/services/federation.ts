@@ -53,9 +53,15 @@ export async function postOutbox(
 
   if (!response.ok) {
     const errorText = await response.text()
-    throw new Error(
-      `Failed to post to outbox: ${response.status} ${response.statusText} - ${errorText}`
-    )
+    console.error('[postOutbox]', response.status, errorText)
+    try {
+      const parsed = JSON.parse(errorText) as { error?: string; message?: string }
+      const msg = parsed.error ?? parsed.message ?? errorText
+      throw new Error(typeof msg === 'string' ? msg : JSON.stringify(msg))
+    } catch (e) {
+      if (e instanceof SyntaxError) throw new Error(errorText)
+      throw e
+    }
   }
 
   const data = await response.json()

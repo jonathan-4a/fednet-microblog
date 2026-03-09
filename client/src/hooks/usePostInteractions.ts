@@ -2,6 +2,7 @@
 import { useState } from 'react'
 import { useLikeMutation } from './mutations/useLikeMutation'
 import { useSnackbar } from './useSnackbar'
+import { API_BASE } from '../config'
 import type { Post } from '../types/posts'
 
 export function usePostInteractions(currentUsername?: string | null | undefined) {
@@ -13,7 +14,6 @@ export function usePostInteractions(currentUsername?: string | null | undefined)
 
   const { like, unlike } = useLikeMutation({
     currentUsername: currentUsername || undefined,
-    onError: showError,
   })
 
   const handleReply = (post: Post) => {
@@ -28,7 +28,10 @@ export function usePostInteractions(currentUsername?: string | null | undefined)
 
   const handleLike = async (post: Post) => {
     const noteId =
-      post.noteId || `/u/${post.author_username}/statuses/${post.guid}`
+      post.noteId ||
+      (post.author_username && post.guid
+        ? `${API_BASE}/u/${post.author_username}/statuses/${post.guid}`
+        : '')
     if (!noteId) {
       showError('Post ID not available')
       return

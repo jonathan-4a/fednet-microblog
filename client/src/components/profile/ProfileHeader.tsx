@@ -7,6 +7,7 @@ import { FollowButton } from './FollowButton'
 import { ProfileInfo } from './ProfileInfo'
 import { ProfileActions } from './ProfileActions'
 import { useProfileFollow } from '../../hooks/useProfileFollow'
+import { useSnackbar } from '../../hooks/useSnackbar'
 
 const UnfollowDialog = lazy(() =>
   import('../UnfollowDialog').then((module) => ({
@@ -37,6 +38,8 @@ export function ProfileHeader({
   onDeleteAccountClick,
   onError,
 }: ProfileHeaderProps) {
+  const { onRemoteError } = useSnackbar()
+  const handleError = onError ?? onRemoteError
   const [unfollowDialogOpen, setUnfollowDialogOpen] = useState(false)
 
   const {
@@ -51,7 +54,7 @@ export function ProfileHeader({
     currentUser,
     targetProfileId: profile.id,
     currentUserFollowing,
-    onError: (error) => onError?.(error),
+    onError: handleError,
   })
 
   const handleFollowClick = async () => {
@@ -70,8 +73,9 @@ export function ProfileHeader({
         targetUsername: profile.preferredUsername,
         targetFollowersUrl: profile.followers,
       })
-    } catch {
-      // handled by hook onError
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      handleError(msg)
     }
   }
 
@@ -84,8 +88,9 @@ export function ProfileHeader({
         targetUsername: profile.preferredUsername,
         targetFollowersUrl: profile.followers,
       })
-    } catch {
-      // handled by hook onError
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : String(err)
+      handleError(msg)
     }
   }
 

@@ -12,6 +12,7 @@ export interface ProfileTabsProps {
   postsCount?: number;
   followersCount?: number;
   followingCount?: number;
+  likesCount?: number;
   followersPrivate?: boolean;
   followingPrivate?: boolean;
 }
@@ -106,6 +107,7 @@ export function ProfileTabs({
   postsCount,
   followersCount,
   followingCount,
+  likesCount,
   followersPrivate,
   followingPrivate,
 }: ProfileTabsProps) {
@@ -137,6 +139,12 @@ export function ProfileTabs({
         isPrivate={followingPrivate}
         selected={value === 2}
         onClick={() => onChange(2)}
+      />
+      <TabSegment
+        label={likesCount === 1 ? 'Like' : 'Likes'}
+        count={likesCount}
+        selected={value === 3}
+        onClick={() => onChange(3)}
       />
     </Box>
   );

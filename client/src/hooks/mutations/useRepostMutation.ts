@@ -2,10 +2,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { repostPost } from '../../services/posts/api'
 import { useAuthContext } from '../../hooks/useAuthContext'
+import { useSnackbar } from '../useSnackbar'
 
 export function useRepostMutation(options?: { onError?: (error: Error) => void }) {
   const queryClient = useQueryClient()
   const { user } = useAuthContext()
+  const { onRemoteError } = useSnackbar()
+  const handleError = options?.onError ?? ((e: Error) => onRemoteError(e.message))
 
   return useMutation({
     mutationFn: async (noteId: string) => {
@@ -21,7 +24,7 @@ export function useRepostMutation(options?: { onError?: (error: Error) => void }
       queryClient.invalidateQueries({ queryKey: ['replies'] })
       queryClient.invalidateQueries({ queryKey: ['reposts'] })
     },
-    onError: options?.onError,
+    onError: handleError,
   })
 }
 
