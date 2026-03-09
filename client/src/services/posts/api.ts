@@ -19,7 +19,12 @@ import type {
   UpdatePostResponse,
   DeletePostResponse,
 } from '../../types/posts'
-import { fetchResource, fetchLikedPostIds, processInBatches, resolveUrl } from './utils'
+import {
+  fetchResource,
+  fetchLikedPostIds,
+  processInBatches,
+  resolveUrl,
+} from './utils'
 import { getActor } from '../federation'
 import { transformNoteToPostDetail } from './transformers'
 import type { Actor } from '../../types/activitypub'
@@ -287,8 +292,9 @@ export async function getPostDetails(
     }
 
     return post
-  } catch {
-    return null
+  } catch (err) {
+    // Rethrow so the UI can show the real reason (e.g. 401 signature required), not "Post not found"
+    throw err
   }
 }
 
@@ -522,169 +528,24 @@ export async function getPostRepliesDetails(
 
   const validReplies = replies.filter((reply): reply is Post => reply !== null)
 
-  const fetchedReplyIds = new Set<string>()
-  const processedNestedReplies = new Set<string>()
-  const maxDepth = params?.maxDepth ?? 3
+  // Return only direct replies (no nested fetch). Deduplicate by noteId so the same reply URL
+  // doesn't appear multiple times in the list.
+  const seenIds = new Set<string>()
+  const uniqueReplies: Post[] = []
 
-  const getNoteId = (reply: Post): string | null => {
-    if (!reply.noteId) {
-      // Fallback: build noteId from author_username and guid if missing
-      if (reply.author_username && reply.guid) {
-        return `/u/${reply.author_username}/statuses/${reply.guid}`
-      }
-      return null
-    }
-    return reply.noteId
-  }
-
-  const allReplies: Post[] = []
   for (const reply of validReplies) {
-    const noteId = getNoteId(reply)
-    if (!noteId) {
-      // Skip replies without valid noteId
-      continue
-    }
-    if (!fetchedReplyIds.has(noteId)) {
-      allReplies.push(reply)
-      fetchedReplyIds.add(noteId)
-    }
+    const noteId = reply.noteId || (reply.author_username && reply.guid
+      ? `/u/${reply.author_username}/statuses/${reply.guid}`
+      : null)
+    if (!noteId) continue
+    if (seenIds.has(noteId)) continue
+    seenIds.add(noteId)
+    uniqueReplies.push(reply)
   }
-
-  const fetchNestedReplies = async (
-    reply: Post,
-    currentDepth: number = 0
-  ): Promise<void> => {
-    if (
-      currentDepth >= maxDepth ||
-      !reply.repliesCount ||
-      reply.repliesCount === 0
-    ) {
-      return
-    }
-
-    const noteId = getNoteId(reply)
-    if (!noteId) {
-      return
-    }
-
-    if (processedNestedReplies.has(noteId)) {
-      return
-    }
-
-    processedNestedReplies.add(noteId)
-
-    try {
-      const noteIdToUse =
-        reply.noteId ||
-        (reply.author_username && reply.guid
-          ? `/u/${reply.author_username}/statuses/${reply.guid}`
-          : null)
-      if (!noteIdToUse) {
-        return
-      }
-      const repliesCollection = await getPostReplies(noteIdToUse, {
-        page: 1,
-        limit: 100,
-      })
-
-      const firstPage =
-        typeof repliesCollection.first === 'object' && repliesCollection.first
-          ? repliesCollection.first
-          : null
-      // Mastodon uses 'items', ActivityPub spec uses 'orderedItems'
-      const nestedReplyUrls = ((firstPage?.orderedItems || firstPage?.items || []) as string[])
-
-      if (nestedReplyUrls.length === 0) {
-        return
-      }
-
-      const nestedReplies = await processInBatches(
-        nestedReplyUrls,
-        async (replyUrl: string) => {
-          try {
-            const note = await getPost(replyUrl)
-            const noteId = note.id || replyUrl
-
-            let actor: Actor | undefined
-            if (note.attributedTo) {
-              try {
-                actor = await getActor(note.attributedTo as string)
-              } catch {
-                // Continue without actor data
-              }
-            }
-
-            const likedPostIdsForReply = new Set([noteId])
-            const post = transformNoteToPostDetail(
-              note,
-              replyUrl,
-              likedPostIdsForReply,
-              actor
-            )
-
-            if (!post) {
-              return null
-            }
-
-            return {
-              ...post,
-              noteId: post.noteId || noteId || replyUrl,
-              isLiked: likedPostIds.has(noteId),
-              inReplyTo: note.inReplyTo || null,
-            } as Post
-          } catch {
-            return null
-          }
-        },
-        10
-      )
-
-      const nestedRepliesData = {
-        replies: nestedReplies.filter((r): r is Post => r !== null),
-        totalItems: nestedReplies.length,
-      }
-
-      const repliesToProcess: Post[] = []
-
-      for (const nestedReply of nestedRepliesData.replies) {
-        const nestedNoteId = getNoteId(nestedReply)
-        if (!nestedNoteId) {
-          continue
-        }
-
-        if (!fetchedReplyIds.has(nestedNoteId)) {
-          allReplies.push(nestedReply)
-          fetchedReplyIds.add(nestedNoteId)
-        }
-
-        if (
-          nestedReply.repliesCount &&
-          nestedReply.repliesCount > 0 &&
-          currentDepth + 1 < maxDepth
-        ) {
-          repliesToProcess.push(nestedReply)
-        }
-      }
-
-      await processInBatches(
-        repliesToProcess,
-        (nestedReply) => fetchNestedReplies(nestedReply, currentDepth + 1),
-        5
-      )
-    } catch {
-      // Ignore errors when fetching nested replies
-    }
-  }
-
-  await processInBatches(
-    validReplies,
-    (reply) => fetchNestedReplies(reply, 0),
-    5
-  )
 
   return {
-    replies: allReplies,
-    totalItems: repliesCollection.totalItems || validReplies.length,
+    replies: uniqueReplies,
+    totalItems: repliesCollection.totalItems || uniqueReplies.length,
     next: nextPageUrl,
   }
 }
@@ -784,7 +645,13 @@ export async function getLikedPostsForUser(
   if (!likedCollection) {
     return { posts: [], totalItems: 0 }
   }
-  const noteIds = (likedCollection.orderedItems || []) as string[]
+  const rawNoteIds = (likedCollection.orderedItems || []) as string[]
+  const baseUrl = likedCollection.id || likedUrl
+  const noteIds = rawNoteIds.map((id) =>
+    id.startsWith('http://') || id.startsWith('https://')
+      ? id
+      : resolveUrl(id, baseUrl)
+  )
 
   if (noteIds.length === 0) {
     return { posts: [], totalItems: likedCollection.totalItems || 0 }
@@ -831,7 +698,7 @@ export async function getLikedPostsForUser(
 
   return {
     posts: validPosts,
-    totalItems: likedCollection.totalItems || validPosts.length,
+    totalItems: validPosts.length,
   }
 }
 

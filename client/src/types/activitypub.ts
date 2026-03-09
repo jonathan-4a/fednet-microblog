@@ -25,13 +25,13 @@ export interface Note extends ActivityPubObject {
   url?: string
   replies?: {
     id: string
-    type: 'OrderedCollection' | 'Collection' // Mastodon uses 'Collection'
-    totalItems?: number // Mastodon may include this
+    type: 'OrderedCollection' | 'Collection'
+    totalItems?: number
     first: {
-      type: 'OrderedCollectionPage' | 'CollectionPage' // Mastodon uses 'CollectionPage'
+      type: 'OrderedCollectionPage' | 'CollectionPage'
       partOf: string
-      orderedItems?: unknown[] // ActivityPub spec
-      items?: unknown[] // Mastodon uses 'items' instead
+      orderedItems?: unknown[]
+      items?: unknown[]
     }
   }
   likes?: {
@@ -106,30 +106,26 @@ export interface Actor extends ActivityPubObject {
 
 // OrderedCollection (ActivityPub spec)
 export interface OrderedCollection extends ActivityPubObject {
-  type: 'OrderedCollection' | 'Collection' // Mastodon uses 'Collection'
+  type: 'OrderedCollection' | 'Collection'
   id: string
-  totalItems?: number // Mastodon may not include this at root level
+  totalItems?: number
   orderedItems?: unknown[]
   first?: OrderedCollectionPage | string
   last?: OrderedCollectionPage | string
 }
 
-// OrderedCollectionPage (ActivityPub spec) / CollectionPage (Mastodon)
 export interface OrderedCollectionPage extends ActivityPubObject {
-  type: 'OrderedCollectionPage' | 'CollectionPage' // Mastodon uses 'CollectionPage'
+  type: 'OrderedCollectionPage' | 'CollectionPage'
   id: string
   partOf: string
-  orderedItems?: unknown[] // ActivityPub spec
-  items?: unknown[] // Mastodon uses 'items' instead of 'orderedItems'
+  orderedItems?: unknown[]
+  items?: unknown[]
   next?: string
   prev?: string
 }
 
 // Factory functions
 
-/**
- * Create a Note object
- */
 export function createNote(params: {
   id: string
   actorUrl: string
@@ -153,9 +149,6 @@ export function createNote(params: {
   }
 }
 
-/**
- * Create a Create activity
- */
 export function createCreateActivity(params: {
   id?: string
   actorUrl: string
@@ -174,9 +167,6 @@ export function createCreateActivity(params: {
   }
 }
 
-/**
- * Create a Follow activity
- */
 export function createFollowActivity(params: {
   actorUrl: string
   targetActorUrl: string
@@ -189,9 +179,6 @@ export function createFollowActivity(params: {
   }
 }
 
-/**
- * Create an Undo activity (for unfollow)
- */
 export function createUndoFollowActivity(params: {
   actorUrl: string
   targetActorUrl: string
@@ -207,9 +194,6 @@ export function createUndoFollowActivity(params: {
   }
 }
 
-/**
- * Create a Like activity
- */
 export function createLikeActivity(params: {
   actorUrl: string
   objectId: string
@@ -222,9 +206,6 @@ export function createLikeActivity(params: {
   }
 }
 
-/**
- * Create an Announce activity (repost/share)
- */
 export function createAnnounceActivity(params: {
   actorUrl: string
   objectId: string
@@ -246,9 +227,6 @@ export interface AcceptActivity extends ActivityPubObject {
 
 // Response interface types
 
-/**
- * Outbox response containing Create activities with Note objects
- */
 export interface OutboxResponse extends Omit<OrderedCollection, 'first'> {
   first: OrderedCollectionPage & {
     orderedItems: Array<CreateActivity & { object: Note }>
