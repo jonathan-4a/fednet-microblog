@@ -5,9 +5,13 @@ import { HTTPException } from "hono/http-exception";
 import type { Context } from "hono";
 import type { IGetServerSettings } from "@shared/ports/in/IGetServerSettings";
 
-// defined error handling types are not used here, unlike usecases
 export class AppController {
-  constructor(private readonly getServerSettings: IGetServerSettings) {}
+  constructor(
+    private readonly getServerSettings: IGetServerSettings,
+    private readonly protocol: string,
+    private readonly domain: string,
+    private readonly port: string,
+  ) {}
 
   getHealth(c: Context) {
     return c.json({ status: "ok" });
@@ -41,26 +45,21 @@ export class AppController {
     const raw = await readFile(specPath, "utf8");
     const spec = JSON.parse(raw) as Record<string, unknown>;
 
-    const protocol = process.env.PROTOCOL;
-    const domain = process.env.DOMAIN;
-    const port = process.env.PORT;
-
-    if (!protocol || !domain || !port) {
+    if (!this.protocol || !this.domain || !this.port) {
       throw new HTTPException(500, {
         message: "PROTOCOL, DOMAIN, and PORT must be defined in env",
       });
     }
 
-    const host = `${protocol}://${domain}:${port}`;
+    const host = `${this.protocol}://${this.domain}:${this.port}`;
 
     spec.servers = [
       {
         url: host,
-        description: `Instance running on ${domain}:${port}`,
+        description: `Instance running on ${this.domain}:${this.port}`,
       },
     ];
 
     return c.json(spec);
   }
 }
-

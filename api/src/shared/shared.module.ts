@@ -8,6 +8,7 @@ export {
   createTransactionManager,
   createIdGenerator,
   createEventBus,
+  createServerSettingsRepository,
   createGetServerSettings,
   createUpdateServerSettings,
   createAppRoutes,
@@ -29,4 +30,3 @@ export type { ILogger } from "./ports/out/ILogger";
 export type { ServerSettings } from "./domain/ServerSettings";
 export type { PaginatedResponseDto } from "./ports/in/Pagination.dto";
 export { BaseEvent } from "./domain/events";
-

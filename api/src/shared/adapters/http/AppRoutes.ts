@@ -12,12 +12,20 @@ export type AuthMiddleware = (c: Context, next: Next) => Promise<void> | void;
 
 export function createAppRoutes(
   getServerSettings: IGetServerSettings,
+  protocol: string,
+  domain: string,
+  port: string,
   proxyAuthMiddleware?: AuthMiddleware,
   getRemoteResource?: IGetRemoteResource,
 ) {
   const app = new Hono();
 
-  const controller = new AppController(getServerSettings);
+  const controller = new AppController(
+    getServerSettings,
+    protocol,
+    domain,
+    port,
+  );
   const proxyController = new ProxyController(getRemoteResource);
 
   app.get(AppUrls.health, (c) => controller.getHealth(c));
@@ -38,4 +46,3 @@ export function createAppRoutes(
 
   return app;
 }
-
