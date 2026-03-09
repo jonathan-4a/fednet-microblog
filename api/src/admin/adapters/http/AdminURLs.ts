@@ -10,4 +10,3 @@ export const AdminURLs = {
   invites: "/invites",
   invite: "/invites/:token",
 };
-

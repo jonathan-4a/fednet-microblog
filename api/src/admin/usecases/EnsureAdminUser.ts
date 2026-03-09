@@ -64,4 +64,3 @@ export class EnsureAdminUser implements IEnsureAdminUser {
     console.log(`Created admin user ${input.username}`);
   }
 }
-

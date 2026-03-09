@@ -22,4 +22,3 @@ export class DisableUser implements IDisableUser {
     return { is_active: false };
   }
 }
-

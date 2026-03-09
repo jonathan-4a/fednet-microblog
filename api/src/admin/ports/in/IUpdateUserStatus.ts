@@ -3,4 +3,3 @@
 export interface IUpdateUserStatus {
   execute(input: { username: string }): Promise<{ is_active: boolean }>;
 }
-

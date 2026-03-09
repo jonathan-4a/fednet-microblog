@@ -1,10 +1,7 @@
 // src/admin/usecases/ListInviteTokens.ts
 
 import type { IListInviteTokens } from "../ports/in/IListInviteTokens";
-import type {
-  IInviteTokenRepository,
-  InviteTokenRecord,
-} from "@auth";
+import type { IInviteTokenRepository, InviteTokenRecord } from "@auth";
 
 export class ListInviteTokens implements IListInviteTokens {
   constructor(private readonly inviteTokenRepository: IInviteTokenRepository) {}
@@ -13,4 +10,3 @@ export class ListInviteTokens implements IListInviteTokens {
     return this.inviteTokenRepository.listAllTokens();
   }
 }
-

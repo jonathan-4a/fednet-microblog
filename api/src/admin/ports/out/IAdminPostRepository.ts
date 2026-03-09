@@ -39,4 +39,3 @@ export interface IAdminPostRepository {
     updates: Partial<Pick<AdminPostRecord, "content" | "is_deleted">>,
   ): Promise<number>;
 }
-

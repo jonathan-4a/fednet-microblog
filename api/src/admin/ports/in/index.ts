@@ -14,4 +14,3 @@ export type { IGetServerSettings } from "./IGetServerSettings";
 export type { IUpdateSettings } from "./IUpdateSettings";
 export type { IListInviteTokens } from "./IListInviteTokens";
 export type { IRevokeInviteToken } from "./IRevokeInviteToken";
-

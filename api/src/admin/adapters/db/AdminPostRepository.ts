@@ -238,4 +238,3 @@ export class AdminPostRepository<
     }, 0);
   }
 }
-

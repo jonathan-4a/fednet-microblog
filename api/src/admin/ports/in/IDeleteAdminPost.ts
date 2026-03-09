@@ -3,4 +3,3 @@
 export interface IDeleteAdminPost {
   execute(input: { guid: string }): Promise<void>;
 }
-

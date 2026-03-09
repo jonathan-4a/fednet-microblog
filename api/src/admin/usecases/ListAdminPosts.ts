@@ -38,4 +38,3 @@ export class ListAdminPosts implements IListAdminPosts {
     };
   }
 }
-

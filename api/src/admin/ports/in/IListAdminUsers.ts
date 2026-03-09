@@ -8,4 +8,3 @@ export interface IListAdminUsers {
     filters: UserListFilters;
   }): Promise<AdminPaginatedUsers>;
 }
-

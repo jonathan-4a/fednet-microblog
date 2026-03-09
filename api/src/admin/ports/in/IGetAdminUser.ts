@@ -8,4 +8,3 @@ export interface IGetAdminUser {
     domain: string;
   }): Promise<AdminUserDetails>;
 }
-

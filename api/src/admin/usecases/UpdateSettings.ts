@@ -12,4 +12,3 @@ export class UpdateSettings implements IUpdateSettings {
     return this.updateServerSettings.execute(input);
   }
 }
-

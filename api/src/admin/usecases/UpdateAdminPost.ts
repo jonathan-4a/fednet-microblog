@@ -30,4 +30,3 @@ export class UpdateAdminPost implements IUpdateAdminPost {
     return { updated: true };
   }
 }
-

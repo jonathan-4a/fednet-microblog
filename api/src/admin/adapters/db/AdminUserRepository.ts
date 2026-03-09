@@ -128,5 +128,3 @@ export class AdminUserRepository<
     return Number(result.numDeletedRows ?? 0);
   }
 }
-
-

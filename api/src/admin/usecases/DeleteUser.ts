@@ -6,9 +6,7 @@ import { NotFoundError } from "@users/domain/UserErrors";
 import { AdminNotFoundError } from "../domain/AdminErrors";
 
 export class DeleteUser implements IDeleteUser {
-  constructor(
-    private readonly deleteUserWithCascade: IDeleteUserWithCascade,
-  ) {}
+  constructor(private readonly deleteUserWithCascade: IDeleteUserWithCascade) {}
 
   async execute(input: { username: string }): Promise<void> {
     try {
@@ -21,4 +19,3 @@ export class DeleteUser implements IDeleteUser {
     }
   }
 }
-

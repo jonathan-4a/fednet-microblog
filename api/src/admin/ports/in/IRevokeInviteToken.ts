@@ -8,4 +8,3 @@ import type {
 export interface IRevokeInviteToken {
   execute(input: RevokeInviteTokenInput): Promise<RevokeInviteTokenOutput>;
 }
-
