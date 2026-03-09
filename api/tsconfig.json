@@ -30,7 +30,7 @@
       "@admin": ["admin/admin.module.ts"],
       "@shared": ["shared/shared.module.ts"],
       "@apcore": ["apcore/apcore.module.ts"],
-
+      "@notifications": ["notifications/notifications.module.ts"],
 
       "@users/*": ["users/*"],
       "@posts/*": ["posts/*"],
@@ -38,7 +38,8 @@
       "@socials/*": ["socials/*"],
       "@admin/*": ["admin/*"],
       "@shared/*": ["shared/*"],
-      "@apcore/*": ["apcore/*"]
+      "@apcore/*": ["apcore/*"],
+      "@notifications/*": ["notifications/*"]
     }
   },
   "include": ["src/**/*"],
