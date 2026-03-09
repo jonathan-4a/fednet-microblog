@@ -1,6 +1,6 @@
 // src/components/SnackbarNotification.tsx
 import { Snackbar, Alert } from '@mui/material'
-import type { SnackbarSeverity } from '../hooks/useSnackbar'
+import type { SnackbarSeverity } from '../contexts/SnackbarContext'
 
 interface SnackbarNotificationProps {
   open: boolean
@@ -27,6 +27,7 @@ export function SnackbarNotification({
       autoHideDuration={autoHideDuration}
       onClose={onClose}
       anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+      sx={{ zIndex: 9999 }}
     >
       <Alert onClose={onClose} severity={severity} sx={{ width: '100%' }}>
         {message}
