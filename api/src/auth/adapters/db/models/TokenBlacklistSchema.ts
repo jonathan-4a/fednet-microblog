@@ -19,4 +19,3 @@ export async function createTokenBlacklistSchema<
     .addColumn("created_at", "integer", (col) => col.notNull())
     .execute();
 }
-

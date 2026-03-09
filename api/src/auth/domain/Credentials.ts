@@ -6,4 +6,3 @@ export interface Credentials {
   publicKeyPem: string;
   privkey: string;
 }
-

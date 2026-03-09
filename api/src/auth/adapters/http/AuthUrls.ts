@@ -5,4 +5,3 @@ export const AuthUrls = {
   logout: "/logout",
   register: "/register",
 };
-

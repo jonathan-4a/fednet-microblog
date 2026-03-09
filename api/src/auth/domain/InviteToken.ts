@@ -8,4 +8,3 @@ export interface InviteToken {
   usedAt: number | null;
   usedBy: string | null;
 }
-

@@ -49,4 +49,3 @@ export class TokenBlacklistRepository implements ITokenBlacklistRepository {
       .execute();
   }
 }
-

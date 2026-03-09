@@ -25,4 +25,3 @@ export async function createInviteTokensSchema<
     .addColumn("used_by", "text")
     .execute();
 }
-
