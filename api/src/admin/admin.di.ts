@@ -1,13 +1,15 @@
 // src/admin/admin.di.ts
-
 import type { Kysely } from "kysely";
 import type {
   ITransactionManager,
   IGetServerSettings,
   IUpdateServerSettings,
 } from "@shared";
-import { createDeleteUserWithCascade } from "@users";
-import type { UsersTable, IUserRepository } from "@users";
+import type {
+  UsersTable,
+  IUserRepository,
+  IDeleteUserWithCascade,
+} from "@users";
 import type { PostsTable } from "@posts";
 import type { IInviteTokenRepository } from "@auth";
 import type {
@@ -20,7 +22,10 @@ import { AdminUserRepository } from "./adapters/db/AdminUserRepository";
 import { AdminPostRepository } from "./adapters/db/AdminPostRepository";
 import { AdminGuard } from "./adapters/http/AdminGuard";
 import { createAdminRoutes as createAdminRoutesFactory } from "./adapters/http/AdminRoutes";
-import { AdminBootstrap } from "./adapters/AdminBootstrap";
+import {
+  AdminBootstrap,
+  type AdminBootstrapConfig,
+} from "./adapters/AdminBootstrap";
 import { GetAdminDashboard } from "./usecases/GetAdminDashboard";
 import { ListAdminUsers } from "./usecases/ListAdminUsers";
 import { GetAdminUser } from "./usecases/GetAdminUser";
@@ -37,75 +42,70 @@ import { ListInviteTokens } from "./usecases/ListInviteTokens";
 import { RevokeInviteToken } from "./usecases/RevokeInviteToken";
 import { EnsureAdminUser } from "./usecases/EnsureAdminUser";
 
-// Factories - accept external dependencies as parameters
-
-function getAdminUserRepository<T>(db: Kysely<T>) {
-  return new AdminUserRepository(
-    db as unknown as Kysely<{ users: UsersTable }>,
-  );
-}
-function getAdminPostRepository<T>(db: Kysely<T>) {
-  return new AdminPostRepository(
-    db as unknown as Kysely<{ posts: PostsTable }>,
-  );
+export function createAdminUserRepository(
+  db: Kysely<{ users: UsersTable }>,
+): AdminUserRepository {
+  return new AdminUserRepository(db);
 }
 
-export function createGetAdminDashboard<T>(db: Kysely<T>) {
-  const adminUserRepository = getAdminUserRepository(db);
-  const adminPostRepository = getAdminPostRepository(db);
+export function createAdminPostRepository(
+  db: Kysely<{ posts: PostsTable }>,
+): AdminPostRepository {
+  return new AdminPostRepository(db);
+}
+
+export function createGetAdminDashboard(
+  adminUserRepository: AdminUserRepository,
+  adminPostRepository: AdminPostRepository,
+) {
   return new GetAdminDashboard(adminUserRepository, adminPostRepository);
 }
 
-export function createListAdminUsers<T>(db: Kysely<T>) {
-  const adminUserRepository = getAdminUserRepository(db);
-  const adminPostRepository = getAdminPostRepository(db);
+export function createListAdminUsers(
+  adminUserRepository: AdminUserRepository,
+  adminPostRepository: AdminPostRepository,
+) {
   return new ListAdminUsers(adminUserRepository, adminPostRepository);
 }
 
-export function createGetAdminUser<T>(db: Kysely<T>) {
-  const adminUserRepository = getAdminUserRepository(db);
-  const adminPostRepository = getAdminPostRepository(db);
+export function createGetAdminUser(
+  adminUserRepository: AdminUserRepository,
+  adminPostRepository: AdminPostRepository,
+) {
   return new GetAdminUser(adminUserRepository, adminPostRepository);
 }
 
-export function createEnableUser<T>(db: Kysely<T>) {
-  const adminUserRepository = getAdminUserRepository(db);
+export function createEnableUser(adminUserRepository: AdminUserRepository) {
   return new EnableUser(adminUserRepository);
 }
 
-export function createDisableUser<T>(db: Kysely<T>) {
-  const adminUserRepository = getAdminUserRepository(db);
+export function createDisableUser(adminUserRepository: AdminUserRepository) {
   return new DisableUser(adminUserRepository);
 }
 
-export function createDeleteUser<T>(
-  db: Kysely<T>,
-  transactionManager: ITransactionManager,
+export function createDeleteUser(
+  deleteUserWithCascade: IDeleteUserWithCascade,
 ) {
-  const deleteUserWithCascade = createDeleteUserWithCascade(
-    db as Parameters<typeof createDeleteUserWithCascade>[0],
-    transactionManager,
-  );
   return new DeleteUser(deleteUserWithCascade);
 }
 
-export function createListAdminPosts<T>(db: Kysely<T>) {
-  const adminPostRepository = getAdminPostRepository(db);
+export function createListAdminPosts(adminPostRepository: AdminPostRepository) {
   return new ListAdminPosts(adminPostRepository);
 }
 
-export function createGetAdminPost<T>(db: Kysely<T>) {
-  const adminPostRepository = getAdminPostRepository(db);
+export function createGetAdminPost(adminPostRepository: AdminPostRepository) {
   return new GetAdminPost(adminPostRepository);
 }
 
-export function createUpdateAdminPost<T>(db: Kysely<T>) {
-  const adminPostRepository = getAdminPostRepository(db);
+export function createUpdateAdminPost(
+  adminPostRepository: AdminPostRepository,
+) {
   return new UpdateAdminPost(adminPostRepository);
 }
 
-export function createDeleteAdminPost<T>(db: Kysely<T>) {
-  const adminPostRepository = getAdminPostRepository(db);
+export function createDeleteAdminPost(
+  adminPostRepository: AdminPostRepository,
+) {
   return new DeleteAdminPost(adminPostRepository);
 }
 
@@ -135,24 +135,37 @@ export function createAdminGuard(jwtTokenService: IJwtTokenService) {
   return new AdminGuard(jwtTokenService);
 }
 
-export function createAdminRoutes<T>(
-  db: Kysely<T>,
+export function createAdminRoutes(
+  adminUserRepository: AdminUserRepository,
+  adminPostRepository: AdminPostRepository,
   transactionManager: ITransactionManager,
   getServerSettings: IGetServerSettings,
   updateServerSettings: IUpdateServerSettings,
   inviteTokenRepository: IInviteTokenRepository,
   jwtTokenService: IJwtTokenService,
+  deleteUserWithCascade: IDeleteUserWithCascade,
+  domain: string,
+  port: string,
 ) {
-  const getAdminDashboard = createGetAdminDashboard(db);
-  const listAdminUsers = createListAdminUsers(db);
-  const getAdminUser = createGetAdminUser(db);
-  const enableUser = createEnableUser(db);
-  const disableUser = createDisableUser(db);
-  const deleteUser = createDeleteUser(db, transactionManager);
-  const listAdminPosts = createListAdminPosts(db);
-  const getAdminPost = createGetAdminPost(db);
-  const updateAdminPost = createUpdateAdminPost(db);
-  const deleteAdminPost = createDeleteAdminPost(db);
+  const getAdminDashboard = createGetAdminDashboard(
+    adminUserRepository,
+    adminPostRepository,
+  );
+  const listAdminUsers = createListAdminUsers(
+    adminUserRepository,
+    adminPostRepository,
+  );
+  const getAdminUser = createGetAdminUser(
+    adminUserRepository,
+    adminPostRepository,
+  );
+  const enableUser = createEnableUser(adminUserRepository);
+  const disableUser = createDisableUser(adminUserRepository);
+  const deleteUser = createDeleteUser(deleteUserWithCascade);
+  const listAdminPosts = createListAdminPosts(adminPostRepository);
+  const getAdminPost = createGetAdminPost(adminPostRepository);
+  const updateAdminPost = createUpdateAdminPost(adminPostRepository);
+  const deleteAdminPost = createDeleteAdminPost(adminPostRepository);
   const getSettings = createGetServerSettings(getServerSettings);
   const updateSettings = createUpdateSettings(updateServerSettings);
   const listInviteTokens = createListInviteTokens(inviteTokenRepository);
@@ -175,6 +188,8 @@ export function createAdminRoutes<T>(
     listInviteTokens,
     revokeInviteToken,
     adminGuard,
+    domain,
+    port,
   );
 }
 
@@ -194,15 +209,19 @@ export function createEnsureAdminUser(
   );
 }
 
-export function createAdminBootstrap(ensureAdminUser: EnsureAdminUser) {
-  return new AdminBootstrap(ensureAdminUser);
+export function createAdminBootstrap(
+  ensureAdminUser: EnsureAdminUser,
+  config: AdminBootstrapConfig,
+) {
+  return new AdminBootstrap(ensureAdminUser, config);
 }
 
 export async function initializeAdmin(
   ensureAdminUser: EnsureAdminUser,
+  config: AdminBootstrapConfig,
 ): Promise<void> {
   try {
-    const adminBootstrap = createAdminBootstrap(ensureAdminUser);
+    const adminBootstrap = createAdminBootstrap(ensureAdminUser, config);
     await adminBootstrap.run();
     console.log("Admin user initialized");
   } catch (error) {
@@ -212,4 +231,3 @@ export async function initializeAdmin(
     );
   }
 }
-

@@ -3,14 +3,26 @@
 import { EnsureAdminUser } from "../usecases/EnsureAdminUser";
 import { AdminInternalServerError } from "../domain/AdminErrors";
 
+export interface AdminBootstrapConfig {
+  username: string | undefined;
+  password: string | undefined;
+  displayName?: string;
+  summary?: string;
+}
+
 export class AdminBootstrap {
-  constructor(private readonly ensureAdminUser: EnsureAdminUser) {}
+  constructor(
+    private readonly ensureAdminUser: EnsureAdminUser,
+    private readonly config: AdminBootstrapConfig,
+  ) {}
 
   async run(): Promise<void> {
-    const username = process.env.ADMIN_USER;
-    const password = process.env.ADMIN_PASS;
-    const displayName = process.env.ADMIN_DISPLAY_NAME ?? "admin";
-    const summary = process.env.ADMIN_SUMMARY ?? "Server Administrator";
+    const {
+      username,
+      password,
+      displayName = "admin",
+      summary = "Server Administrator",
+    } = this.config;
 
     if (!username || !password) {
       throw new AdminInternalServerError(
@@ -26,4 +38,3 @@ export class AdminBootstrap {
     });
   }
 }
-
