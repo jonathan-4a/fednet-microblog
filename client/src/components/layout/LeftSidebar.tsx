@@ -7,6 +7,7 @@ import {
   ListItemIcon,
   ListItemText,
   Avatar,
+  Badge,
   Button,
   Menu,
   MenuItem,
@@ -14,26 +15,34 @@ import {
 } from '@mui/material'
 import HomeIcon from '@mui/icons-material/Home'
 import PersonIcon from '@mui/icons-material/Person'
+import SearchIcon from '@mui/icons-material/Search'
+import NotificationsIcon from '@mui/icons-material/Notifications'
 import AdminPanelSettingsIcon from '@mui/icons-material/AdminPanelSettings'
 import LogoutIcon from '@mui/icons-material/Logout'
 import MoreHorizIcon from '@mui/icons-material/MoreHoriz'
 import EditIcon from '@mui/icons-material/Edit'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import { useAuthContext } from '../../hooks/useAuthContext'
 import { useAuth } from '../../hooks/useAuth'
 import { useState } from 'react'
 import { CreatePostDialog } from '../CreatePostDialog'
+import { UserSearch } from '../UserSearch'
+import { useNotificationsQuery } from '../../hooks/queries/useNotificationsQuery'
+import { COLORS } from '../../constants/theme'
 
 interface LeftSidebarProps {
   isCompact?: boolean
+  showSearchInSidebar?: boolean
 }
 
-export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
+export function LeftSidebar({ isCompact = false, showSearchInSidebar = false }: LeftSidebarProps) {
   const navigate = useNavigate()
+  const location = useLocation()
   const { isAuthenticated, user } = useAuthContext()
   const { logout } = useAuth()
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null)
   const [postDialogOpen, setPostDialogOpen] = useState(false)
+  const [searchOpen, setSearchOpen] = useState(false)
   const open = Boolean(anchorEl)
 
   const handleClick = (event: React.MouseEvent<HTMLElement>) => {
@@ -49,13 +58,32 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
     await logout()
   }
 
-  const menuItems = [
+  const { data: notificationsData } = useNotificationsQuery(
+    { limit: 1, offset: 0 },
+    { enabled: !!(isAuthenticated && user) }
+  )
+  const notificationUnreadCount = notificationsData?.unreadCount ?? 0
+
+  const menuItems: Array<{ icon: React.ReactNode; label: string; path?: string; onClick?: () => void; showBadge?: boolean }> = [
     { icon: <HomeIcon />, label: 'Home', path: '/' },
+    ...(showSearchInSidebar && isAuthenticated
+      ? [{ icon: <SearchIcon />, label: 'Search', onClick: () => setSearchOpen(true) }]
+      : []),
     {
       icon: <PersonIcon />,
       label: 'Profile',
       path: user ? `/profile/${user.username}` : '/login',
     },
+    ...(isAuthenticated && user
+      ? [
+          {
+            icon: <NotificationsIcon />,
+            label: 'Notifications',
+            path: '/notifications' as const,
+            showBadge: true,
+          },
+        ]
+      : []),
     ...(user?.isAdmin
       ? [{ icon: <AdminPanelSettingsIcon />, label: 'Admin', path: '/admin' as const }]
       : []),
@@ -111,16 +139,37 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
     >
       <List sx={{ p: 0, flex: 1 }}>
         {menuItems.map((item) => {
+          const isSelected =
+            item.path !== undefined &&
+            (item.path === '/'
+              ? location.pathname === '/'
+              : location.pathname.startsWith(item.path))
+          const icon =
+            'showBadge' in item && item.showBadge && notificationUnreadCount > 0 ? (
+              <Badge badgeContent={notificationUnreadCount} sx={{ '& .MuiBadge-badge': { backgroundColor: COLORS.twitterRed, color: COLORS.white } }}>
+                {item.icon}
+              </Badge>
+            ) : (
+              item.icon
+            )
           const buttonContent = (
             <ListItemButton
-              onClick={() => navigate(item.path)}
+              onClick={() => (item.onClick ? item.onClick() : item.path && navigate(item.path))}
+              selected={isSelected}
               sx={{
                 borderRadius: 3,
                 py: 1.5,
                 px: isCompact ? 1.5 : 3,
                 justifyContent: isCompact ? 'center' : 'flex-start',
+                backgroundColor: isSelected ? 'rgba(0, 0, 0, 0.08)' : 'transparent',
                 '&:hover': {
-                  backgroundColor: 'rgba(0, 0, 0, 0.03)',
+                  backgroundColor: isSelected ? 'rgba(0, 0, 0, 0.12)' : 'rgba(0, 0, 0, 0.03)',
+                },
+                '&.Mui-selected': {
+                  backgroundColor: 'rgba(0, 0, 0, 0.08)',
+                  '&:hover': {
+                    backgroundColor: 'rgba(0, 0, 0, 0.12)',
+                  },
                 },
               }}
             >
@@ -131,7 +180,7 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
                   justifyContent: 'center',
                 }}
               >
-                {item.icon}
+                {icon}
               </ListItemIcon>
               {!isCompact && (
                 <ListItemText
@@ -146,7 +195,7 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
           )
 
           return (
-            <ListItem key={item.path} disablePadding sx={{ mb: 0.5 }}>
+            <ListItem key={item.path ?? item.label} disablePadding sx={{ mb: 0.5 }}>
               {isCompact ? (
                 <Tooltip title={item.label} placement='right'>
                   {buttonContent}
@@ -301,6 +350,7 @@ export function LeftSidebar({ isCompact = false }: LeftSidebarProps) {
         open={postDialogOpen}
         onClose={() => setPostDialogOpen(false)}
       />
+      {searchOpen && <UserSearch variant='modal' onClose={() => setSearchOpen(false)} />}
     </Box>
   )
 }
