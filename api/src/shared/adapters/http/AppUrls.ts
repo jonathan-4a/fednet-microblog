@@ -7,4 +7,3 @@ export const AppUrls = {
   docsOpenapi: "/docs/openapi.json",
   proxy: "/proxy",
 };
-

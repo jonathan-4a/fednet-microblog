@@ -29,4 +29,3 @@ export async function createServerSettingsSchema<
     .addColumn("updated_at", "integer", (col) => col.notNull())
     .execute();
 }
-

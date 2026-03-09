@@ -6,4 +6,3 @@ export interface IServerSettingsRepository {
   getSettings(): Promise<ServerSettings | null>;
   saveSettings(settings: ServerSettings): Promise<ServerSettings>;
 }
-

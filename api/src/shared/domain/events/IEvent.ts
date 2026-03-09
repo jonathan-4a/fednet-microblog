@@ -6,4 +6,3 @@ export interface IEvent<TPayload = unknown> {
   readonly payload: TPayload;
   readonly occurredAt: Date;
 }
-

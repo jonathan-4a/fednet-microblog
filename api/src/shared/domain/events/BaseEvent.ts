@@ -21,4 +21,3 @@ export abstract class BaseEvent<
     this.occurredAt = occurredAt;
   }
 }
-

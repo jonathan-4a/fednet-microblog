@@ -8,4 +8,3 @@ export class IdGenerator implements IIdGenerator {
     return randomUUID();
   }
 }
-

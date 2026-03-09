@@ -8,4 +8,3 @@ import type {
 export interface IGetServerSettings {
   execute(input: GetServerSettingsInput): Promise<GetServerSettingsOutput>;
 }
-

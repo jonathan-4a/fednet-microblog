@@ -5,4 +5,3 @@ export interface ILogger {
   error(message: string, trace?: string, ...meta: unknown[]): void;
   warn(message: string, ...meta: unknown[]): void;
 }
-
