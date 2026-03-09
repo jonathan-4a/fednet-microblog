@@ -6,11 +6,13 @@ import type { Kysely } from "kysely";
 import {
   createTransactionManager,
   createEventBus,
+  createServerSettingsRepository,
   createGetServerSettings,
   createUpdateServerSettings,
   createAppRoutes as createAppRoutesBase,
   createIdGenerator,
 } from "@shared";
+import type { ServerSettingsTable } from "@shared";
 import {
   createAuthRoutes as createAuthRoutesBase,
   createInviteTokenRepository,
@@ -22,13 +24,22 @@ import {
   createAuthGuard,
   GenerateInviteToken,
 } from "@auth";
+import type {
+  CredentialsTable,
+  TokenBlacklistTable,
+  InviteTokensTable,
+} from "@auth";
 import {
   createAdminRoutes as createAdminRoutesBase,
+  createAdminUserRepository,
+  createAdminPostRepository,
   initializeAdmin as initializeAdminBase,
   createEnsureAdminUser,
+  type AdminBootstrapConfig,
 } from "@admin";
 import {
   createUserRepository,
+  createDeleteUserWithCascade,
   type UsersTable,
   createUsersRoutes as createUsersRoutesBase,
 } from "@users";
@@ -36,246 +47,406 @@ import {
   createPostsRoutes as createPostsRoutesBase,
   createGetLiked,
   createCreatePost,
+  createGetPostByNoteId,
   createPostRepository,
+  createLikesRepository,
+  createAnnouncesRepository,
+  type PostsTable,
+  type LikesTable,
+  type AnnouncesTable,
 } from "@posts";
-import { createSocialsRoutes as createSocialsRoutesBase } from "@socials";
-import { createFollowRepository } from "@socials";
+import {
+  createSocialsRoutes as createSocialsRoutesBase,
+  createFollowRepository,
+  type FollowsTable,
+} from "@socials";
+import {
+  createNotificationRepository,
+  createNotificationsRoutes as createNotificationsRoutesBase,
+  createNotificationActivityEmitter,
+  createNotificationActivityListener,
+} from "@notifications";
+import type { NotificationsTable } from "@notifications";
+import type { PostCreatedEvent } from "@posts";
 import {
   createActivityPubRoutes as createActivityPubRoutesBase,
+  createGetWebFinger,
+  createGetActor,
+  createGetOutbox,
+  createDispatchS2SActivityEvent,
+  createDispatchC2SActivityEvent,
   createFanOutActivity,
   Note,
   Collection,
+  WebFinger,
+  Actor,
   Activity,
   HandleC2SFollowActivity,
   HandleC2SCreateActivity,
   HandleC2SAnnounceActivity,
+  HandleC2SLikeActivity,
   HandleS2SFollowActivity,
   HandleS2SCreateActivity,
   HandleS2SAnnounceActivity,
+  HandleS2SLikeActivity,
+  HandlePostCreated,
   HttpSignatureService,
   FederationDelivery,
   createGetRemoteResource,
+  createResolveNoteAuthorActor,
   type C2SActivitySubmittedEvent,
   type ActivityReceivedEvent,
 } from "@apcore";
-import type { PostCreatedEvent } from "@posts";
-import { createAnnouncesRepository } from "@posts";
 
 const transactionManager = createTransactionManager(db);
-const getServerSettings = createGetServerSettings(db);
-const updateServerSettings = createUpdateServerSettings(db);
+const serverSettingsRepository = createServerSettingsRepository(
+  db as unknown as Kysely<{ server_settings: ServerSettingsTable }>,
+);
+const getServerSettings = createGetServerSettings(serverSettingsRepository);
+const updateServerSettings = createUpdateServerSettings(
+  serverSettingsRepository,
+  getServerSettings,
+);
 const eventBus = createEventBus();
 
-const followRepository = createFollowRepository(db);
+const protocol = process.env.PROTOCOL ?? "http";
+const port = process.env.PORT ?? "3000";
+const domain = process.env.DOMAIN ?? "localhost";
+const host = port === "80" || port === "443" ? domain : `${domain}:${port}`;
+const ourOrigin = `${protocol}://${host}`;
+
+const userRepository = createUserRepository(
+  db as unknown as Kysely<{ users: UsersTable }>,
+);
+const followRepository = createFollowRepository(
+  db as unknown as Kysely<{ follows: FollowsTable }>,
+);
 const credentialsRepository = createCredentialsRepository(
-  db as unknown as Parameters<typeof createCredentialsRepository>[0],
+  db as unknown as Kysely<{ credentials: CredentialsTable }>,
 );
-const httpSignatureService = new HttpSignatureService(credentialsRepository);
-const federationDelivery = new FederationDelivery(httpSignatureService);
-const handleC2SFollow = new HandleC2SFollowActivity(
-  followRepository,
-  federationDelivery,
+const tokenBlacklistRepository = createTokenBlacklistRepository(
+  db as unknown as Kysely<{ token_blacklist: TokenBlacklistTable }>,
 );
+const postRepository = createPostRepository(
+  db as unknown as Kysely<{ posts: PostsTable }>,
+);
+const likesRepository = createLikesRepository(
+  db as unknown as Kysely<{ likes: LikesTable }>,
+);
+const announcesRepository = createAnnouncesRepository(
+  db as unknown as Kysely<{ announces: AnnouncesTable }>,
+);
+const notificationRepository = createNotificationRepository(
+  db as unknown as Kysely<{ notifications: NotificationsTable }>,
+);
+
+const httpSignatureService = new HttpSignatureService(
+  credentialsRepository,
+  ourOrigin,
+);
+const federationDelivery = new FederationDelivery(
+  httpSignatureService,
+  ourOrigin,
+);
+const jwtTokenService = createJwtTokenService(
+  process.env.JWT_SECRET!,
+  tokenBlacklistRepository,
+);
+const authGuard = createAuthGuard(jwtTokenService);
+
 const noteSerializer = new Note();
 const activitySerializer = new Activity();
+const collectionSerializer = new Collection();
+const webFingerSerializer = new WebFinger();
+const actorSerializer = new Actor();
+
+const getWebFinger = createGetWebFinger(
+  userRepository,
+  credentialsRepository,
+  webFingerSerializer,
+);
+const getActor = createGetActor(
+  userRepository,
+  credentialsRepository,
+  actorSerializer,
+);
+const getOutbox = createGetOutbox(
+  postRepository,
+  userRepository,
+  likesRepository,
+  announcesRepository,
+  noteSerializer,
+  collectionSerializer,
+);
+const dispatchS2SActivityEvent = createDispatchS2SActivityEvent(
+  eventBus,
+  host,
+  protocol,
+);
+const dispatchC2SActivityEvent = createDispatchC2SActivityEvent(
+  eventBus,
+  host,
+  protocol,
+);
+
+const deleteUserWithCascade = createDeleteUserWithCascade(
+  userRepository,
+  postRepository,
+  likesRepository,
+  announcesRepository,
+  followRepository,
+  transactionManager,
+);
+
 const createPostUseCase = createCreatePost(
-  db as Parameters<typeof createCreatePost>[0],
+  postRepository,
+  userRepository,
   createIdGenerator(),
   eventBus,
   noteSerializer,
   activitySerializer,
 );
-const handleC2SCreate = new HandleC2SCreateActivity(createPostUseCase);
-const handleS2SFollow = new HandleS2SFollowActivity(followRepository);
-const postRepository = createPostRepository(
-  db as Parameters<typeof createPostRepository>[0],
-);
-const announcesRepository = createAnnouncesRepository(
-  db as Parameters<typeof createAnnouncesRepository>[0],
-);
-const handleC2SAnnounce = new HandleC2SAnnounceActivity(announcesRepository);
-const handleS2SCreate = new HandleS2SCreateActivity(postRepository);
-const handleS2SAnnounce = new HandleS2SAnnounceActivity(announcesRepository);
+
 const fanOutActivity = createFanOutActivity(
-  db as Parameters<typeof createFanOutActivity>[0],
+  followRepository,
+  federationDelivery,
+  ourOrigin,
+);
+const getPostByNoteId = createGetPostByNoteId(postRepository, ourOrigin);
+const resolveNoteAuthorActor = createResolveNoteAuthorActor(
+  getPostByNoteId,
+  ourOrigin,
 );
 
-eventBus.on(
-  "post.created",
-  async (event: PostCreatedEvent) => {
-    const { actorUrl, createActivity } = event.payload;
-    try {
-      await fanOutActivity.execute({
-        actorUrl,
-        activity: createActivity as Record<string, unknown>,
-      });
-    } catch (err) {
-      console.error("[post.created] Fan-out failed:", (err as Error).message);
-    }
-  },
+const notificationEmitter = createNotificationActivityEmitter(eventBus);
+createNotificationActivityListener(eventBus, notificationRepository);
+
+const handleC2SFollow = new HandleC2SFollowActivity(
+  followRepository,
+  federationDelivery,
+  ourOrigin,
+  notificationEmitter,
+);
+const handleC2SCreate = new HandleC2SCreateActivity(
+  createPostUseCase,
+  federationDelivery,
+  ourOrigin,
+);
+const handleC2SAnnounce = new HandleC2SAnnounceActivity(
+  announcesRepository,
+  federationDelivery,
+  resolveNoteAuthorActor,
+  notificationEmitter,
+);
+const handleC2SLike = new HandleC2SLikeActivity(
+  federationDelivery,
+  likesRepository,
+  ourOrigin,
+  resolveNoteAuthorActor,
+  notificationEmitter,
+);
+const handleS2SFollow = new HandleS2SFollowActivity(
+  followRepository,
+  ourOrigin,
+  notificationEmitter,
+);
+const handleS2SCreate = new HandleS2SCreateActivity(
+  postRepository,
+  ourOrigin,
+  resolveNoteAuthorActor,
+  notificationEmitter,
+);
+const handleS2SAnnounce = new HandleS2SAnnounceActivity(
+  announcesRepository,
+  ourOrigin,
+  resolveNoteAuthorActor,
+  notificationEmitter,
+);
+const handleS2SLike = new HandleS2SLikeActivity(
+  likesRepository,
+  resolveNoteAuthorActor,
+  notificationEmitter,
+);
+const handlePostCreated = new HandlePostCreated(
+  fanOutActivity,
+  resolveNoteAuthorActor,
+  notificationEmitter,
 );
 
-eventBus.on(
-  "activity.c2s.submitted",
-  async (event: C2SActivitySubmittedEvent) => {
-    await handleC2SFollow.handle(event);
-    await handleC2SCreate.handle(event);
-    await handleC2SAnnounce.handle(event);
-  },
-);
-eventBus.on("activity.received", async (event: ActivityReceivedEvent) => {
+async function onPostCreated(event: PostCreatedEvent): Promise<void> {
+  await handlePostCreated.handle(event);
+}
+
+async function onC2SActivitySubmitted(
+  event: C2SActivitySubmittedEvent,
+): Promise<void> {
+  await handleC2SFollow.handle(event);
+  await handleC2SCreate.handle(event);
+  await handleC2SAnnounce.handle(event);
+  await handleC2SLike.handle(event);
+}
+
+async function onActivityReceived(event: ActivityReceivedEvent): Promise<void> {
   await handleS2SFollow.handle(event);
   await handleS2SCreate.handle(event);
   await handleS2SAnnounce.handle(event);
-});
+  await handleS2SLike.handle(event);
+}
+
+eventBus.on("post.created", onPostCreated);
+eventBus.on("activity.c2s.submitted", onC2SActivitySubmitted);
+eventBus.on("activity.received", onActivityReceived);
 
 export async function ensureSchema() {
   return await ensureSchemaFunction(db);
 }
 
-/** Ensures the server_settings row exists (creates defaults if table is empty). */
 export async function ensureServerSettings(): Promise<void> {
   await getServerSettings.execute();
 }
 
 export function createAppRoutes() {
-  const tokenBlacklistRepository = createTokenBlacklistRepository(
-    db as unknown as Parameters<typeof createTokenBlacklistRepository>[0],
-  );
-  const jwtSecret = process.env.JWT_SECRET!;
-  const jwtTokenService = createJwtTokenService(
-    jwtSecret,
-    tokenBlacklistRepository,
-  );
-  const authGuard = createAuthGuard(jwtTokenService);
   const getRemoteResource = createGetRemoteResource(httpSignatureService);
   return createAppRoutesBase(
-    db,
+    getServerSettings,
+    protocol,
+    domain,
+    port,
     ((c, next) => authGuard.authenticate(c, next)) as any,
     getRemoteResource,
   );
 }
 
 export function createAuthRoutes() {
-  const userRepository = createUserRepository(
-    db as unknown as Kysely<{ users: UsersTable }>,
+  const inviteTokenRepository = createInviteTokenRepository(
+    db as unknown as Kysely<{ invite_tokens: InviteTokensTable }>,
   );
-  const jwtSecret = process.env.JWT_SECRET!;
   return createAuthRoutesBase(
-    db as unknown as Parameters<typeof createAuthRoutesBase>[0],
+    credentialsRepository,
+    tokenBlacklistRepository,
+    inviteTokenRepository,
     userRepository,
     getServerSettings,
     transactionManager,
-    jwtSecret,
+    process.env.JWT_SECRET!,
+    domain,
+    protocol,
   );
 }
 
 export function createAdminRoutes() {
   const inviteTokenRepository = createInviteTokenRepository(
-    db as unknown as Parameters<typeof createInviteTokenRepository>[0],
+    db as unknown as Kysely<{ invite_tokens: InviteTokensTable }>,
   );
-  const tokenBlacklistRepository = createTokenBlacklistRepository(
-    db as unknown as Parameters<typeof createTokenBlacklistRepository>[0],
+  const adminUserRepository = createAdminUserRepository(
+    db as unknown as Kysely<{ users: UsersTable }>,
   );
-  const jwtTokenService = createJwtTokenService(
-    process.env.JWT_SECRET!,
-    tokenBlacklistRepository,
+  const adminPostRepository = createAdminPostRepository(
+    db as unknown as Kysely<{ posts: PostsTable }>,
   );
-
   return createAdminRoutesBase(
-    db,
+    adminUserRepository,
+    adminPostRepository,
     transactionManager,
     getServerSettings,
     updateServerSettings,
     inviteTokenRepository,
     jwtTokenService,
+    deleteUserWithCascade,
+    domain,
+    port,
   );
 }
 
 export function createUsersRoutes() {
-  const tokenBlacklistRepository = createTokenBlacklistRepository(
-    db as unknown as Parameters<typeof createTokenBlacklistRepository>[0],
-  );
-  const jwtSecret = process.env.JWT_SECRET!;
-  const jwtTokenService = createJwtTokenService(
-    jwtSecret,
-    tokenBlacklistRepository,
-  );
-  const authGuard = createAuthGuard(jwtTokenService);
   const inviteTokenRepository = createInviteTokenRepository(
-    db as unknown as Parameters<typeof createInviteTokenRepository>[0],
+    db as unknown as Kysely<{ invite_tokens: InviteTokensTable }>,
   );
   const generateInviteToken = new GenerateInviteToken(
     inviteTokenRepository,
     getServerSettings,
   );
   return createUsersRoutesBase(
-    db as unknown as Kysely<{ users: UsersTable }>,
+    userRepository,
     transactionManager,
     (c, next) => authGuard.authenticate(c, next),
     generateInviteToken,
+    deleteUserWithCascade,
   );
 }
 
 export function createPostsRoutes() {
-  const noteSerializer = new Note();
-  const collectionSerializer = new Collection();
-  const activitySerializer = new Activity();
   return createPostsRoutesBase(
-    db,
+    postRepository,
+    likesRepository,
+    announcesRepository,
     noteSerializer,
     collectionSerializer,
     activitySerializer,
+    host,
+    protocol,
+    ((c: unknown, next: () => Promise<void>) =>
+      authGuard.authenticate(
+        c as Parameters<typeof authGuard.authenticate>[0],
+        next as Parameters<typeof authGuard.authenticate>[1],
+      )) as Parameters<typeof createPostsRoutesBase>[8],
   );
 }
 
 export function createSocialsRoutes() {
-  const collectionSerializer = new Collection();
-  const userRepository = createUserRepository(
-    db as unknown as Kysely<{ users: UsersTable }>,
+  const getLiked = createGetLiked(
+    likesRepository,
+    userRepository,
+    collectionSerializer,
   );
-  const getLiked = createGetLiked(db, collectionSerializer);
   return createSocialsRoutesBase(
-    db,
+    followRepository,
     userRepository,
     getLiked,
     collectionSerializer,
+    host,
+    protocol,
+  );
+}
+
+export function createNotificationsRoutes() {
+  return createNotificationsRoutesBase(
+    notificationRepository,
+    (c, next) => authGuard.authenticate(c, next),
+    host,
+    protocol,
   );
 }
 
 export function createActivityPubRoutes() {
-  const tokenBlacklistRepository = createTokenBlacklistRepository(
-    db as unknown as Parameters<typeof createTokenBlacklistRepository>[0],
-  );
-  const jwtSecret = process.env.JWT_SECRET!;
-  const jwtTokenService = createJwtTokenService(
-    jwtSecret,
-    tokenBlacklistRepository,
-  );
-  const authGuard = createAuthGuard(jwtTokenService);
-  return createActivityPubRoutesBase(db, eventBus, (c, next) =>
-    authGuard.authenticate(c, next),
+  return createActivityPubRoutesBase(
+    getWebFinger,
+    getActor,
+    getOutbox,
+    dispatchS2SActivityEvent,
+    dispatchC2SActivityEvent,
+    host,
+    protocol,
+    domain,
+    (c, next) => authGuard.authenticate(c, next),
   );
 }
 
 export function initializeAdmin() {
-  const userRepository = createUserRepository(
-    db as unknown as Kysely<{ users: UsersTable }>,
-  );
-  const credentialsRepository = createCredentialsRepository(
-    db as unknown as Parameters<typeof createCredentialsRepository>[0],
-  );
-  const passwordHasher = createPasswordHasherService();
-  const keyPairGenerator = createKeyPairGeneratorService();
-
   const ensureAdminUser = createEnsureAdminUser(
     userRepository,
     credentialsRepository,
-    passwordHasher,
-    keyPairGenerator,
+    createPasswordHasherService(),
+    createKeyPairGeneratorService(),
     transactionManager,
   );
 
-  return initializeAdminBase(ensureAdminUser);
-}
+  const adminConfig: AdminBootstrapConfig = {
+    username: process.env.ADMIN_USER,
+    password: process.env.ADMIN_PASS,
+    displayName: process.env.ADMIN_DISPLAY_NAME,
+    summary: process.env.ADMIN_SUMMARY,
+  };
 
+  return initializeAdminBase(ensureAdminUser, adminConfig);
+}
