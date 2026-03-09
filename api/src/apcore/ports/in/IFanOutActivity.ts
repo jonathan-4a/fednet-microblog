@@ -8,4 +8,3 @@ export interface FanOutActivityInput {
 export interface IFanOutActivity {
   execute(input: FanOutActivityInput): Promise<void>;
 }
-

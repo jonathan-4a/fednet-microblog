@@ -57,4 +57,3 @@ export class GetWebFinger implements IGetWebFinger {
     );
   }
 }
-

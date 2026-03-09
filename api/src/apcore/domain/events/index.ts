@@ -2,4 +2,3 @@
 
 export * from "./ActivityReceivedEvent";
 export * from "./C2SActivitySubmittedEvent";
-

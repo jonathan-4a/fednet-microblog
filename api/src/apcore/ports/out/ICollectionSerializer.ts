@@ -30,4 +30,3 @@ export interface ICollectionSerializer {
     prev?: string | null,
   ): Record<string, unknown>;
 }
-

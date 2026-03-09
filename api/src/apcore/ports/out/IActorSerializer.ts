@@ -32,4 +32,3 @@ export interface IActorSerializer {
     published?: string,
   ): ActorDocument;
 }
-

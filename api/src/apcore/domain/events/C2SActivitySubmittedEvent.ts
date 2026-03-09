@@ -15,4 +15,3 @@ export class C2SActivitySubmittedEvent extends BaseEvent<C2SActivitySubmittedPay
     super("activity.c2s.submitted", payload);
   }
 }
-

@@ -25,4 +25,3 @@ export class WebFinger implements IWebFingerSerializer {
     };
   }
 }
-
