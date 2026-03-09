@@ -12,26 +12,31 @@ import {
   createPostsRoutes,
   createSocialsRoutes,
   createActivityPubRoutes,
+  createNotificationsRoutes,
 } from "./composition-root";
 import { globalExceptionHandler } from "./globalExceptionHandler";
 
 export const app = new Hono();
 
 app.use("*", logger());
-app.use("*", cors());
+app.use(
+  "*",
+  cors({
+    origin: "*",
+    exposeHeaders: ["Link"],
+  }),
+);
 app.onError(globalExceptionHandler);
 
-// Serve built frontend assets (JS/CSS, etc.)
 app.use("/assets/*", serveStatic({ root: "./public" }));
 
 app.route("/api", createAppRoutes());
 app.route("/api/auth", createAuthRoutes());
 app.route("/api/admin", createAdminRoutes());
 app.route("/api/users", createUsersRoutes());
+app.route("/api/notifications", createNotificationsRoutes());
 app.route("/", createActivityPubRoutes());
 app.route("/", createPostsRoutes());
 app.route("/", createSocialsRoutes());
 
-// SPA fallback: any unmatched route returns index.html (no 404 for client routes)
 app.get("*", serveStatic({ path: "./public/index.html" }));
-

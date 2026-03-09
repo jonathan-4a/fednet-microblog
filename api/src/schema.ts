@@ -10,6 +10,10 @@ import { createPostSchema, type PostsTable } from "@posts";
 import { createAnnouncesSchema, type AnnouncesTable } from "@posts";
 import { createLikesSchema, type LikesTable } from "@posts";
 import { createFollowSchema, type FollowsTable } from "@socials";
+import {
+  createNotificationSchema,
+  type NotificationsTable,
+} from "@notifications";
 
 export interface DbTables {
   users: UsersTable;
@@ -21,6 +25,7 @@ export interface DbTables {
   invite_tokens: InviteTokensTable;
   follows: FollowsTable;
   likes: LikesTable;
+  notifications: NotificationsTable;
 }
 
 export async function ensureSchema(db: Kysely<DbTables>): Promise<void> {
@@ -34,5 +39,5 @@ export async function ensureSchema(db: Kysely<DbTables>): Promise<void> {
   await createAnnouncesSchema<DbTables>(db);
   await createLikesSchema<DbTables>(db);
   await createFollowSchema<DbTables>(db);
+  await createNotificationSchema<DbTables>(db);
 }
-
