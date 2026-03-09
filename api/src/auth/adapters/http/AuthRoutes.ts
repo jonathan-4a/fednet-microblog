@@ -12,9 +12,17 @@ export function createAuthRoutes(
   loginUser: ILoginUser,
   logoutUser: ILogoutUser,
   registerUser: IRegisterUser,
+  domain: string,
+  protocol: string,
 ) {
   const app = new Hono();
-  const controller = new AuthController(loginUser, logoutUser, registerUser);
+  const controller = new AuthController(
+    loginUser,
+    logoutUser,
+    registerUser,
+    domain,
+    protocol,
+  );
 
   app.post(AuthUrls.register, (c) => controller.register(c));
   app.post(AuthUrls.login, (c) => controller.login(c));
@@ -22,4 +30,3 @@ export function createAuthRoutes(
 
   return app;
 }
-

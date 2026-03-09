@@ -16,6 +16,8 @@ export class AuthController {
     private readonly loginUser: ILoginUser,
     private readonly logoutUser: ILogoutUser,
     private readonly registerUser: IRegisterUser,
+    private readonly domain: string,
+    private readonly protocol: string,
   ) {}
 
   async register(c: Context) {
@@ -48,8 +50,6 @@ export class AuthController {
   async login(c: Context) {
     const body = await c.req.json<LoginUserInput>();
     const { username, password } = body;
-    const domain = process.env.DOMAIN!;
-    const protocol = process.env.PROTOCOL!;
 
     if (!username || !password) {
       throw new AuthValidationError("Missing username or password");
@@ -58,8 +58,8 @@ export class AuthController {
     const result = await this.loginUser.execute({
       username,
       password,
-      domain,
-      protocol,
+      domain: this.domain,
+      protocol: this.protocol,
     });
 
     return c.json(result);
@@ -78,4 +78,3 @@ export class AuthController {
     return c.json({ msg: "Logged out successfully" });
   }
 }
-

@@ -2,7 +2,7 @@
 
 import type { Kysely } from "kysely";
 import type { ITransactionManager, IGetServerSettings } from "@shared";
-import { IUserRepository } from "@users";
+import type { IUserRepository } from "@users";
 
 import { LoginUser } from "./usecases/LoginUser";
 import { LogoutUser } from "./usecases/LogoutUser";
@@ -113,26 +113,16 @@ export function createAuthGuard(jwtService: JwtTokenServiceSimple) {
 }
 
 export function createAuthRoutes(
-  db: Kysely<{
-    credentials: CredentialsTable;
-    token_blacklist: TokenBlacklistTable;
-    invite_tokens: InviteTokensTable;
-  }>,
+  credentialsRepository: CredentialsRepository,
+  tokenBlacklistRepository: TokenBlacklistRepository,
+  inviteTokenRepository: InviteTokenRepository,
   userRepository: IUserRepository,
   getServerSettings: IGetServerSettings,
   transactionManager: ITransactionManager,
   jwtSecret: string,
+  domain: string,
+  protocol: string,
 ) {
-  const credentialsRepository = createCredentialsRepository(
-    db as unknown as Kysely<{ credentials: CredentialsTable }>,
-  );
-  const tokenBlacklistRepository = createTokenBlacklistRepository(
-    db as unknown as Kysely<{ token_blacklist: TokenBlacklistTable }>,
-  );
-  const inviteTokenRepository = createInviteTokenRepository(
-    db as unknown as Kysely<{ invite_tokens: InviteTokensTable }>,
-  );
-
   const jwtService = createJwtTokenService(jwtSecret, tokenBlacklistRepository);
 
   const loginUser = createLoginUser(
@@ -149,6 +139,11 @@ export function createAuthRoutes(
     getServerSettings,
   );
 
-  return createAuthRoutesFactory(loginUser, logoutUser, registerUser);
+  return createAuthRoutesFactory(
+    loginUser,
+    logoutUser,
+    registerUser,
+    domain,
+    protocol,
+  );
 }
-
