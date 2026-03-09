@@ -37,5 +37,3 @@ export interface RemoveLocalFollowingInput {
   host: string;
   protocol: string;
 }
-
-

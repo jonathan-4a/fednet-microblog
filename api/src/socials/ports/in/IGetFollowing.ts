@@ -10,4 +10,3 @@ export interface GetFollowingInput {
 export interface IGetFollowing {
   execute(input: GetFollowingInput): Promise<Record<string, unknown>>;
 }
-

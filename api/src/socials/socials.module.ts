@@ -23,4 +23,3 @@ export type { IGetFollowers } from "./ports/in/IGetFollowers";
 export type { IGetFollowing } from "./ports/in/IGetFollowing";
 export type { FollowsTable } from "./adapters/db/models/FollowSchema";
 export type { IFollowRepository } from "./ports/out/IFollowRepository";
-
