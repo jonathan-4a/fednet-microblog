@@ -39,4 +39,3 @@ function createDatabase(dbPath?: string): Kysely<DbTables> {
 
 // Export singleton db instance
 export const db = createDatabase(process.env.DB_PATH);
-
