@@ -1,5 +1,4 @@
 // src/users/users.di.ts
-
 import type { Kysely } from "kysely";
 import { GetUserProfile } from "./usecases/GetUserProfile";
 import { UpdateUserProfile } from "./usecases/UpdateUserProfile";
@@ -17,12 +16,14 @@ import {
 import type { ITransactionManager } from "@shared";
 import type { IGenerateInviteToken } from "@auth";
 import type { UsersTable } from "./adapters/db/models/UserSchema";
-import {
-  createPostRepository,
-  createLikesRepository,
-  createAnnouncesRepository,
+import type { IUserRepository } from "./ports/out/IUserRepository";
+import type { IDeleteUserWithCascade } from "./usecases/DeleteUserWithCascade";
+import type {
+  IPostRepository,
+  ILikesRepository,
+  IAnnouncesRepository,
 } from "@posts";
-import { createFollowRepository } from "@socials";
+import type { IFollowRepository } from "@socials";
 
 export function createUserRepository(db: Kysely<{ users: UsersTable }>) {
   return new UserRepository(db);
@@ -32,35 +33,26 @@ export function createUserEntity(data: CreateUserInput) {
   return new UserEntity(data);
 }
 
-export function createGetUserProfile(db: Kysely<{ users: UsersTable }>) {
-  const userRepository = createUserRepository(db);
+export function createGetUserProfile(userRepository: IUserRepository) {
   return new GetUserProfile(userRepository);
 }
 
-export function createUpdateUserProfile(db: Kysely<{ users: UsersTable }>) {
-  const userRepository = createUserRepository(db);
+export function createUpdateUserProfile(userRepository: IUserRepository) {
   return new UpdateUserProfile(userRepository);
 }
 
-export function createSearchUsers(db: Kysely<{ users: UsersTable }>) {
-  const userRepository = createUserRepository(db);
+export function createSearchUsers(userRepository: IUserRepository) {
   return new SearchUsers(userRepository);
 }
 
-export function createDeleteUserWithCascade<
-  T extends {
-    users: UsersTable;
-    posts: import("@posts").PostsTable;
-    likes: import("@posts").LikesTable;
-    announces: import("@posts").AnnouncesTable;
-    follows: import("@socials").FollowsTable;
-  },
->(db: Kysely<T>, transactionManager: ITransactionManager) {
-  const userRepository = createUserRepository(db);
-  const postRepository = createPostRepository(db);
-  const likesRepository = createLikesRepository(db);
-  const announcesRepository = createAnnouncesRepository(db);
-  const followRepository = createFollowRepository(db);
+export function createDeleteUserWithCascade(
+  userRepository: IUserRepository,
+  postRepository: IPostRepository,
+  likesRepository: ILikesRepository,
+  announcesRepository: IAnnouncesRepository,
+  followRepository: IFollowRepository,
+  transactionManager: ITransactionManager,
+) {
   return new DeleteUserWithCascade(
     userRepository,
     postRepository,
@@ -72,26 +64,22 @@ export function createDeleteUserWithCascade<
 }
 
 export function createDeleteUserAccount(
-  db: Kysely<{ users: UsersTable }>,
-  transactionManager: ITransactionManager,
+  deleteUserWithCascade: IDeleteUserWithCascade,
 ) {
-  const deleteUserWithCascade = createDeleteUserWithCascade(
-    db as Parameters<typeof createDeleteUserWithCascade>[0],
-    transactionManager,
-  );
   return new DeleteUserAccount(deleteUserWithCascade);
 }
 
 export function createUsersRoutes(
-  db: Kysely<{ users: UsersTable }>,
+  userRepository: IUserRepository,
   transactionManager: ITransactionManager,
   authMiddleware: AuthMiddleware,
   generateInviteToken: IGenerateInviteToken,
+  deleteUserWithCascade: IDeleteUserWithCascade,
 ) {
-  const getUserProfile = createGetUserProfile(db);
-  const updateUserProfile = createUpdateUserProfile(db);
-  const deleteUserAccount = createDeleteUserAccount(db, transactionManager);
-  const searchUsers = createSearchUsers(db);
+  const getUserProfile = createGetUserProfile(userRepository);
+  const updateUserProfile = createUpdateUserProfile(userRepository);
+  const deleteUserAccount = createDeleteUserAccount(deleteUserWithCascade);
+  const searchUsers = createSearchUsers(userRepository);
 
   return createUsersRoutesFactory(
     getUserProfile,
@@ -102,4 +90,3 @@ export function createUsersRoutes(
     generateInviteToken,
   );
 }
-

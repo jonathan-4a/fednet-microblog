@@ -22,6 +22,6 @@ export type { IUserRepository } from "./ports/out/IUserRepository";
 export type { IGetUserProfile } from "./ports/in/IGetUserProfile";
 export type { IUpdateUserProfile } from "./ports/in/IUpdateUserProfile";
 export type { IDeleteUserAccount } from "./ports/in/IDeleteUserAccount";
+export type { IDeleteUserWithCascade } from "./usecases/DeleteUserWithCascade";
 export type { ISearchUsers } from "./ports/in/ISearchUsers";
 export type { UsersTable } from "./adapters/db/models/UserSchema";
-
