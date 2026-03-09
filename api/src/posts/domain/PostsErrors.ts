@@ -19,5 +19,3 @@ export class PostValidationError extends DomainError {
     super(message);
   }
 }
-
-

@@ -71,5 +71,3 @@ export interface UpdatePostInput {
   username: string;
   content: string;
 }
-
-

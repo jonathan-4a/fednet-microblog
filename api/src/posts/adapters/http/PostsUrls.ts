@@ -8,4 +8,3 @@ export const PostsUrls = {
   updatePost: "/:id",
   deletePost: "/:id",
 };
-

@@ -13,7 +13,6 @@ export class DeletePost implements IDeletePost {
       `[DeletePost] Attempting to delete post with guid: ${guid}, username: ${username}`,
     );
 
-    // First, try to find the post to see what author_username is stored
     const post = await this.postRepository.findByGuid(guid);
     if (post) {
       console.log(
@@ -43,4 +42,3 @@ export class DeletePost implements IDeletePost {
     return { deleted: true };
   }
 }
-

@@ -51,4 +51,3 @@ export class GetPostLikes implements IGetPostLikes {
     return collection;
   }
 }
-
