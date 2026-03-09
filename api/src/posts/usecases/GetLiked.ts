@@ -17,7 +17,6 @@ export class GetLiked implements IGetLiked {
   async execute(input: GetLikedInput): Promise<Record<string, unknown>> {
     const { username, host, protocol } = input;
 
-    // Verify user exists before returning collection
     const user = await this.userRepository.findUserByUsername(username);
     if (!user || !user.isActive) {
       throw new PostNotFoundError("User not found");
@@ -36,4 +35,3 @@ export class GetLiked implements IGetLiked {
     );
   }
 }
-

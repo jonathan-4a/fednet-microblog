@@ -24,4 +24,3 @@ export class UpdatePost implements IUpdatePost {
     return { updated: true };
   }
 }
-

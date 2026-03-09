@@ -20,4 +20,3 @@ export async function createLikesSchema<T extends { likes: LikesTable }>(
     .addPrimaryKeyConstraint("likes_pk", ["note_id", "actor"])
     .execute();
 }
-
