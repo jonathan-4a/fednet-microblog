@@ -20,7 +20,6 @@ export class GetFollowing implements IGetFollowing {
     const { username, host, protocol, page } = input;
     const PAGE_SIZE = 10;
 
-    // Verify user exists before returning collection
     const user = await this.userRepository.findUserByUsername(username);
     if (!user || !user.isActive) {
       throw new UserNotFoundError("User not found");
@@ -34,20 +33,15 @@ export class GetFollowing implements IGetFollowing {
     const totalItems = actors.length;
 
     if (!page) {
-      // Return main collection with link to first page
       return this.collectionSerializer.createOrderedCollection(
         collectionId,
         totalItems,
-        null, // No items inline
-        `${collectionId}?page=1`, // Link to first page
+        null,
+        `${collectionId}?page=1`,
       );
     }
 
-    // Return specific page
     const pageNum = Number(page);
-    if (isNaN(pageNum) || pageNum < 1) {
-      // Fallback or error?
-    }
 
     const start = (pageNum - 1) * PAGE_SIZE;
     const end = start + PAGE_SIZE;
@@ -67,4 +61,3 @@ export class GetFollowing implements IGetFollowing {
     );
   }
 }
-

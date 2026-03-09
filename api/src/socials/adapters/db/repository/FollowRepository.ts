@@ -117,4 +117,3 @@ export class FollowRepository<
     return Number(result?.numDeletedRows ?? 0);
   }
 }
-
