@@ -18,4 +18,3 @@ export interface IUserRepository {
     excludeUsername?: string,
   ): Promise<CreateUserInput[]>;
 }
-

@@ -5,4 +5,3 @@ import { SearchUsersOutput, SearchUsersInput } from "./Users.dto";
 export interface ISearchUsers {
   execute(input: SearchUsersInput): Promise<SearchUsersOutput>;
 }
-

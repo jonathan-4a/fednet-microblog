@@ -29,4 +29,3 @@ export async function createUserSchema<T extends { users: UsersTable }>(
     .addColumn("created_at", "integer", (col) => col.notNull())
     .execute();
 }
-
