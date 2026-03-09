@@ -5,13 +5,18 @@ import type { IEvent } from "../../domain/events";
 import type { EventHandler, IEventBus } from "../../ports/out/IEventBus";
 import type { ILogger } from "../../ports/out/ILogger";
 
-// TODO: has to be singleton
 export class EventBus implements IEventBus {
   private readonly emitter = new EventEmitter();
 
   private readonly wrappedHandlers = new Map<
     string,
-    Map<EventHandler<any>, (event: any) => void>
+    Map<
+      EventHandler<IEvent>,
+      {
+        listener: (event: IEvent) => void;
+        promiseHandler: (event: IEvent) => Promise<void>;
+      }
+    >
   >();
 
   constructor(private readonly logger: ILogger) {
@@ -39,28 +44,56 @@ export class EventBus implements IEventBus {
     return true;
   }
 
+  async emitAndAwait<TEvent extends IEvent>(event: TEvent): Promise<void> {
+    this.logger.info(`[EventBus] Emitting (await) "${event.name}"`, {
+      id: event.id,
+      occurredAt: event.occurredAt,
+    });
+
+    const handlersForEvent = this.wrappedHandlers.get(event.name);
+    const promiseHandlers = handlersForEvent
+      ? [...handlersForEvent.values()].map((entry) => entry.promiseHandler)
+      : [];
+    await Promise.all(promiseHandlers.map((h) => h(event)));
+  }
+
   on<TEvent extends IEvent>(
     eventName: string,
     handler: EventHandler<TEvent>,
   ): this {
-    const wrappedHandler = (event: TEvent): void => {
-      void Promise.resolve(handler(event)).catch((error) => {
+    const wrappedHandler = (event: TEvent): Promise<void> => {
+      const p = Promise.resolve(handler(event));
+      p.catch((error) => {
         const err = error instanceof Error ? error : new Error(String(error));
         this.logger.error(
           `[EventBus] Handler failed for "${eventName}"`,
           err.stack,
         );
       });
+      return p;
+    };
+
+    const emitterListener = (event: TEvent): void => {
+      void wrappedHandler(event);
     };
 
     const handlersForEvent =
       this.wrappedHandlers.get(eventName) ??
-      new Map<EventHandler<any>, (event: any) => void>();
+      new Map<
+        EventHandler<IEvent>,
+        {
+          listener: (event: IEvent) => void;
+          promiseHandler: (event: IEvent) => Promise<void>;
+        }
+      >();
 
-    handlersForEvent.set(handler, wrappedHandler);
+    handlersForEvent.set(handler as EventHandler<IEvent>, {
+      listener: emitterListener,
+      promiseHandler: wrappedHandler as (event: IEvent) => Promise<void>,
+    });
     this.wrappedHandlers.set(eventName, handlersForEvent);
 
-    this.emitter.on(eventName, wrappedHandler);
+    this.emitter.on(eventName, emitterListener);
     return this;
   }
 
@@ -69,11 +102,11 @@ export class EventBus implements IEventBus {
     handler: EventHandler<TEvent>,
   ): this {
     const handlersForEvent = this.wrappedHandlers.get(eventName);
-    const wrappedHandler = handlersForEvent?.get(handler);
+    const entry = handlersForEvent?.get(handler as EventHandler<IEvent>);
 
-    if (wrappedHandler) {
-      this.emitter.off(eventName, wrappedHandler);
-      handlersForEvent?.delete(handler);
+    if (entry) {
+      this.emitter.off(eventName, entry.listener);
+      handlersForEvent?.delete(handler as EventHandler<IEvent>);
 
       if (handlersForEvent?.size === 0) {
         this.wrappedHandlers.delete(eventName);
@@ -83,4 +116,3 @@ export class EventBus implements IEventBus {
     return this;
   }
 }
-

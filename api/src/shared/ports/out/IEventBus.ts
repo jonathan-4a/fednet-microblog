@@ -8,6 +8,7 @@ export type EventHandler<TEvent extends IEvent = IEvent> = (
 
 export interface IEventBus {
   emit<TEvent extends IEvent>(event: TEvent): void;
+  emitAndAwait<TEvent extends IEvent>(event: TEvent): Promise<void>;
   on<TEvent extends IEvent>(
     eventName: string,
     handler: EventHandler<TEvent>,
@@ -17,4 +18,3 @@ export interface IEventBus {
     handler: EventHandler<TEvent>,
   ): void;
 }
-

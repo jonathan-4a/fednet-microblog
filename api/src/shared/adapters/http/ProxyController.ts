@@ -1,9 +1,4 @@
 // src/shared/adapters/http/ProxyController.ts
-//
-// Generic proxy: GET a URL and return the response. Optional signing when
-// getRemoteResource (apcore, uses HttpSignatureService like follow/federation)
-// is injected and the user is logged in. When not logged in we cannot sign;
-// we use plain fetch. No signing logic here—only apcore's GetRemoteResource.
 
 import type { Context } from "hono";
 import { HTTPException } from "hono/http-exception";
@@ -69,12 +64,14 @@ export class ProxyController {
           raw: true,
         });
         const raw = result as GetRemoteResourceRawResult;
+        const headers: Record<string, string> = {
+          "content-type": raw.contentType,
+        };
+        if (raw.link) headers["Link"] = raw.link;
         return new Response(raw.body, {
           status: raw.status,
           statusText: raw.statusText,
-          headers: {
-            "content-type": raw.contentType,
-          },
+          headers,
         });
       } catch (error) {
         const message =
@@ -112,13 +109,15 @@ export class ProxyController {
     const body = await response.arrayBuffer();
     const contentType =
       response.headers.get("content-type") ?? "application/octet-stream";
+    const responseHeaders: Record<string, string> = {
+      "content-type": contentType,
+    };
+    const link = response.headers.get("Link");
+    if (link) responseHeaders["Link"] = link;
     return new Response(body, {
       status: response.status,
       statusText: response.statusText,
-      headers: {
-        "content-type": contentType,
-      },
+      headers: responseHeaders,
     });
   }
 }
-
