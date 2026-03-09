@@ -6,4 +6,3 @@ export type { GetOutboxInput } from "./ActivityPub.dto";
 export interface IGetOutbox {
   execute(input: GetOutboxInput): Promise<Record<string, unknown>>;
 }
-

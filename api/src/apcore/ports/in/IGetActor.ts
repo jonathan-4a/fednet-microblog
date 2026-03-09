@@ -7,4 +7,3 @@ export type { GetActorInput } from "./ActivityPub.dto";
 export interface IGetActor {
   execute(input: GetActorInput): Promise<ActorDocument>;
 }
-

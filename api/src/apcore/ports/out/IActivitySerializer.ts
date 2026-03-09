@@ -80,4 +80,3 @@ export interface IActivitySerializer {
     published?: string,
   ): Record<string, unknown>;
 }
-

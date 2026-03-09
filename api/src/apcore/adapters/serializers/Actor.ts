@@ -1,6 +1,9 @@
 // src/apcore/adapters/serializers/Actor.ts
 
-import type { IActorSerializer, ActorDocument } from "../../ports/out/IActorSerializer";
+import type {
+  IActorSerializer,
+  ActorDocument,
+} from "../../ports/out/IActorSerializer";
 import { ACTIVITY_STREAMS_CONTEXT } from "./ActivityStreamsContext";
 
 export class Actor implements IActorSerializer {
@@ -35,4 +38,3 @@ export class Actor implements IActorSerializer {
     };
   }
 }
-

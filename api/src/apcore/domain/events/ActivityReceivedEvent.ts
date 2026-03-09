@@ -14,4 +14,3 @@ export class ActivityReceivedEvent extends BaseEvent<ActivityReceivedPayload> {
     super("activity.received", payload);
   }
 }
-

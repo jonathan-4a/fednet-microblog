@@ -30,7 +30,6 @@ export class GetOutbox implements IGetOutbox {
   async execute(input: GetOutboxInput): Promise<Record<string, unknown>> {
     const { username, host, protocol, page = 1, limit = 20 } = input;
 
-    // Verify user exists
     const user = await this.userRepository.findUserByUsername(username);
     if (!user || !user.isActive) {
       throw new NotFoundError();
@@ -39,14 +38,9 @@ export class GetOutbox implements IGetOutbox {
     const actorUrl = `${protocol}://${host}/u/${username}`;
     const collectionId = `${actorUrl}/outbox`;
 
-    // Fetch enough posts and reposts to build the requested page (merge by date desc)
     const needTotal = page * limit + 1;
     const [posts, reposts] = await Promise.all([
-      this.postRepository.findByAuthorIncludingReplies(
-        actorUrl,
-        needTotal,
-        0,
-      ),
+      this.postRepository.findByAuthorIncludingReplies(actorUrl, needTotal, 0),
       this.announcesRepository.getAnnouncedByActorPaginated(
         actorUrl,
         needTotal,
@@ -92,7 +86,9 @@ export class GetOutbox implements IGetOutbox {
         }
 
         const post = entry.post;
-        const noteId = post.noteId ?? `${protocol}://${host}/u/${username}/statuses/${post.guid}`;
+        const noteId =
+          post.noteId ??
+          `${protocol}://${host}/u/${username}/statuses/${post.guid}`;
         const publishedIso = new Date(post.createdAt * 1000).toISOString();
 
         const likesCount = await this.likesRepository.countLikes(noteId);
@@ -152,4 +148,3 @@ export class GetOutbox implements IGetOutbox {
     return collection;
   }
 }
-
