@@ -2,12 +2,15 @@
 
 import type { IFollowRepository } from "@socials";
 import type { IFederationDelivery } from "../ports/out/IFederationDelivery";
+import type { INotificationActivityEmitter } from "../ports/out/INotificationActivityEmitter";
 import type { C2SActivitySubmittedEvent } from "../domain/events/C2SActivitySubmittedEvent";
 
 export class HandleC2SFollowActivity {
   constructor(
     private readonly followRepository: IFollowRepository,
     private readonly federationDelivery: IFederationDelivery,
+    private readonly ourOrigin: string,
+    private readonly notify: INotificationActivityEmitter | null = null,
   ) {}
 
   async handle(event: C2SActivitySubmittedEvent): Promise<void> {
@@ -15,7 +18,9 @@ export class HandleC2SFollowActivity {
       event.payload;
 
     const activityType =
-      typeof activity.type === "string" ? activity.type : String(activity?.type);
+      typeof activity.type === "string"
+        ? activity.type
+        : String(activity?.type);
     if (activityType !== "Follow" && activityType !== "Undo") {
       return;
     }
@@ -29,43 +34,61 @@ export class HandleC2SFollowActivity {
         const targetActor =
           typeof activity.object === "string"
             ? activity.object
-            : (activity.object as Record<string, unknown>)?.id as
+            : ((activity.object as Record<string, unknown>)?.id as
                 | string
-                | undefined;
+                | undefined);
         if (!targetActor) {
           throw new Error("Follow activity missing object (target actor)");
         }
-        await this.followRepository.upsertFollow(
-          followerActor,
-          targetActor,
-          "accepted",
-        );
         await this.federationDelivery.sendToInbox(targetActor, activity);
+        const isRemoteTarget = !targetActor.startsWith(this.ourOrigin);
+        if (isRemoteTarget) {
+          await this.followRepository.upsertFollow(
+            followerActor,
+            targetActor,
+            "accepted",
+          );
+        }
+        if (this.notify && targetActor) {
+          await this.notify.onFollowDone(targetActor, followerActor);
+        }
         responseCallback?.();
       } else if (activityType === "Undo") {
         const obj = activity.object as Record<string, unknown> | string;
         const innerType =
           typeof obj === "object" && obj?.type !== undefined
-            ? String(obj.type)
-            : "";
+            ? typeof obj.type === "string"
+              ? obj.type
+              : null
+            : typeof obj === "string"
+              ? obj
+              : "";
         if (innerType === "Follow") {
           const targetActor =
             typeof (obj as Record<string, unknown>).object === "string"
               ? ((obj as Record<string, unknown>).object as string)
-              : ((obj as Record<string, unknown>).object as Record<string, unknown>)
-                  ?.id as string | undefined;
+              : ((
+                  (obj as Record<string, unknown>).object as Record<
+                    string,
+                    unknown
+                  >
+                )?.id as string | undefined);
           if (targetActor) {
-            await this.followRepository.deleteFollow(followerActor, targetActor);
             await this.federationDelivery.sendToInbox(targetActor, activity);
+            await this.followRepository.deleteFollow(
+              followerActor,
+              targetActor,
+            );
           }
         }
         responseCallback?.();
       }
     } catch (error) {
       console.error("[HandleC2SFollowActivity]", error);
-      responseCallback?.(error instanceof Error ? error : new Error(String(error)));
+      responseCallback?.(
+        error instanceof Error ? error : new Error(String(error)),
+      );
       throw error;
     }
   }
 }
-
