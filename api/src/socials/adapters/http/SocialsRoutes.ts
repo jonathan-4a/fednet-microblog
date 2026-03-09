@@ -12,6 +12,8 @@ export function createSocialsRoutes(
   getFollowers: IGetFollowers,
   getFollowing: IGetFollowing,
   getLiked: IGetLiked,
+  host: string,
+  protocol: string,
 ) {
   const app = new Hono();
 
@@ -19,6 +21,8 @@ export function createSocialsRoutes(
     getFollowers,
     getFollowing,
     getLiked,
+    host,
+    protocol,
   );
 
   app.get(SocialsUrls.userFollowers, (c) => controller.followers(c));
@@ -29,4 +33,3 @@ export function createSocialsRoutes(
 
   return app;
 }
-
