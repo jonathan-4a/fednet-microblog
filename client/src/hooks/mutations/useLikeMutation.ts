@@ -3,6 +3,8 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { postOutbox } from '../../services/federation'
 import { createLikeActivity } from '../../types/activitypub'
 import type { Post } from '../../types/posts'
+import { API_BASE } from '../../config'
+import { useSnackbar } from '../useSnackbar'
 
 interface UseLikeMutationOptions {
   currentUsername: string | undefined
@@ -21,14 +23,17 @@ export function useLikeMutation({
   onError,
 }: UseLikeMutationOptions) {
   const queryClient = useQueryClient()
+  const { onRemoteError } = useSnackbar()
+  const handleError = onError ?? onRemoteError
 
   const like = useMutation({
     mutationFn: async (params: LikeMutationParams) => {
       if (!currentUsername) {
         throw new Error('User not authenticated')
       }
+      const actorUrl = `${API_BASE}/u/${currentUsername}`
       const activity = createLikeActivity({
-        actorUrl: '',
+        actorUrl,
         objectId: params.noteId,
       })
       const response = await postOutbox(
@@ -109,47 +114,51 @@ export function useLikeMutation({
         return old
       }
 
-      // Update posts in all caches
+      const updatePostInPages = (p: Post) =>
+        (p.noteId && p.noteId === noteId) ||
+        (p.guid === post.guid && p.author_username === post.author_username)
+          ? { ...p, isLiked: true, likesCount: (p.likesCount || 0) + 1, noteId }
+          : p
+
       queryClient.setQueriesData({ queryKey: ['posts'] }, (old: any) => {
         if (!old) return old
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map(updatePostInPages),
+              replies: (page.replies || []).map(updatePostInPages),
+            })),
+          }
+        }
         if (Array.isArray(old)) {
-          return old.map((p: Post) => {
-            const matches =
-              (p.noteId && p.noteId === noteId) ||
-              (p.guid === post.guid &&
-                p.author_username === post.author_username)
-            return matches
-              ? {
-                  ...p,
-                  isLiked: true,
-                  likesCount: (p.likesCount || 0) + 1,
-                  noteId: noteId,
-                }
-              : p
-          })
+          return old.map(updatePostInPages)
         }
         return old
       })
 
+      const updateReply = (r: Post) =>
+        (r.noteId && r.noteId === noteId) ||
+        (r.guid === post.guid && r.author_username === post.author_username)
+          ? { ...r, isLiked: true, likesCount: (r.likesCount || 0) + 1, noteId }
+          : r
+
       const updateRepliesDetailsCache = (old: any) => {
-        if (!old || !old.replies) return old
-        return {
-          ...old,
-          replies: old.replies.map((r: Post) => {
-            const matches =
-              (r.noteId && r.noteId === noteId) ||
-              (r.guid === post.guid &&
-                r.author_username === post.author_username)
-            return matches
-              ? {
-                  ...r,
-                  isLiked: true,
-                  likesCount: (r.likesCount || 0) + 1,
-                  noteId: noteId,
-                }
-              : r
-          }),
+        if (!old) return old
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              replies: (page.replies || []).map(updateReply),
+            })),
+          }
         }
+        if (old.replies && Array.isArray(old.replies)) {
+          return { ...old, replies: old.replies.map(updateReply) }
+        }
+        return old
       }
 
       queryClient.setQueriesData(
@@ -157,8 +166,24 @@ export function useLikeMutation({
         updateRepliesDetailsCache
       )
 
+      queryClient.setQueriesData({ queryKey: ['post'] }, (old: Post | null) => {
+        if (!old) return old
+        const matches =
+          (old.noteId && old.noteId === noteId) ||
+          (old.guid === post.guid && old.author_username === post.author_username)
+        return matches
+          ? { ...old, isLiked: true, likesCount: (old.likesCount || 0) + 1, noteId }
+          : old
+      })
+
       queryClient.setQueriesData(
-        { queryKey: ['likedPosts', currentUsername] },
+        {
+          queryKey: ['likedPosts'],
+          predicate: (query) =>
+            query.queryKey[0] === 'likedPosts' &&
+            typeof query.queryKey[1] === 'string' &&
+            query.queryKey[1].includes(`/u/${currentUsername}/liked`),
+        },
         updateLikedPostsCache
       )
 
@@ -225,7 +250,7 @@ export function useLikeMutation({
           }
         })
       }
-      onError?.(error.message)
+      handleError(error.message)
     },
   })
 
@@ -234,14 +259,15 @@ export function useLikeMutation({
       if (!currentUsername) {
         throw new Error('User not authenticated')
       }
+      const actorUrl = `${API_BASE}/u/${currentUsername}`
       const likeActivity = createLikeActivity({
-        actorUrl: '',
+        actorUrl,
         objectId: params.noteId,
       })
       const undoActivity = {
         '@context': 'https://www.w3.org/ns/activitystreams',
         type: 'Undo',
-        actor: '',
+        actor: actorUrl,
         object: likeActivity,
       }
       const response = await postOutbox(
@@ -292,47 +318,61 @@ export function useLikeMutation({
         return old
       }
 
-      // Update posts in all caches
+      const updatePostInPages = (p: Post) =>
+        (p.noteId && p.noteId === noteId) ||
+        (p.guid === post.guid && p.author_username === post.author_username)
+          ? {
+              ...p,
+              isLiked: false,
+              likesCount: Math.max((p.likesCount || 0) - 1, 0),
+              noteId,
+            }
+          : p
+
       queryClient.setQueriesData({ queryKey: ['posts'] }, (old: any) => {
         if (!old) return old
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              posts: (page.posts || []).map(updatePostInPages),
+              replies: (page.replies || []).map(updatePostInPages),
+            })),
+          }
+        }
         if (Array.isArray(old)) {
-          return old.map((p: Post) => {
-            const matches =
-              (p.noteId && p.noteId === noteId) ||
-              (p.guid === post.guid &&
-                p.author_username === post.author_username)
-            return matches
-              ? {
-                  ...p,
-                  isLiked: false,
-                  likesCount: Math.max((p.likesCount || 0) - 1, 0),
-                  noteId: noteId,
-                }
-              : p
-          })
+          return old.map(updatePostInPages)
         }
         return old
       })
 
+      const updateReply = (r: Post) =>
+        (r.noteId && r.noteId === noteId) ||
+        (r.guid === post.guid && r.author_username === post.author_username)
+          ? {
+              ...r,
+              isLiked: false,
+              likesCount: Math.max((r.likesCount || 0) - 1, 0),
+              noteId,
+            }
+          : r
+
       const updateRepliesDetailsCache = (old: any) => {
-        if (!old || !old.replies) return old
-        return {
-          ...old,
-          replies: old.replies.map((r: Post) => {
-            const matches =
-              (r.noteId && r.noteId === noteId) ||
-              (r.guid === post.guid &&
-                r.author_username === post.author_username)
-            return matches
-              ? {
-                  ...r,
-                  isLiked: false,
-                  likesCount: Math.max((r.likesCount || 0) - 1, 0),
-                  noteId: noteId,
-                }
-              : r
-          }),
+        if (!old) return old
+        if (old.pages && Array.isArray(old.pages)) {
+          return {
+            ...old,
+            pages: old.pages.map((page: any) => ({
+              ...page,
+              replies: (page.replies || []).map(updateReply),
+            })),
+          }
         }
+        if (old.replies && Array.isArray(old.replies)) {
+          return { ...old, replies: old.replies.map(updateReply) }
+        }
+        return old
       }
 
       queryClient.setQueriesData(
@@ -340,8 +380,29 @@ export function useLikeMutation({
         updateRepliesDetailsCache
       )
 
+      queryClient.setQueriesData({ queryKey: ['post'] }, (old: Post | null) => {
+        if (!old) return old
+        const matches =
+          (old.noteId && old.noteId === noteId) ||
+          (old.guid === post.guid && old.author_username === post.author_username)
+        return matches
+          ? {
+              ...old,
+              isLiked: false,
+              likesCount: Math.max((old.likesCount || 0) - 1, 0),
+              noteId,
+            }
+          : old
+      })
+
       queryClient.setQueriesData(
-        { queryKey: ['likedPosts', currentUsername] },
+        {
+          queryKey: ['likedPosts'],
+          predicate: (query) =>
+            query.queryKey[0] === 'likedPosts' &&
+            typeof query.queryKey[1] === 'string' &&
+            query.queryKey[1].includes(`/u/${currentUsername}/liked`),
+        },
         updateLikedPostsCache
       )
 
@@ -408,7 +469,7 @@ export function useLikeMutation({
           }
         })
       }
-      onError?.(error.message)
+      handleError(error.message)
     },
   })
 

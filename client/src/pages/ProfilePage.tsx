@@ -12,11 +12,11 @@ import { RepostsTab } from '../components/profile/RepostsTab'
 import { LikesTab } from '../components/profile/LikesTab'
 import { ProfileDialogs } from '../components/profile/ProfileDialogs'
 import { UserList } from '../components/profile/UserList'
-import { SnackbarNotification } from '../components/SnackbarNotification'
 import { LoadingSpinner } from '../components/LoadingSpinner'
 import { ErrorDisplay } from '../components/ErrorDisplay'
 import { useAuthStore } from '../stores/authStore'
 import { useUserPostsQuery } from '../hooks/queries/useUserPostsQuery'
+import { useLikedPostsQuery } from '../hooks/queries/useLikedPostsQuery'
 import { useServerConfig } from '../hooks/queries/useConfigQuery'
 
 import { useProfileDialogs } from '../hooks/useProfileDialogs'
@@ -57,7 +57,7 @@ export function ProfilePage() {
   const dialogs = useProfileDialogs()
   const { deleteAccount: handleDeleteAccount, loading: deleteAccountLoading } =
     useDeleteAccount()
-  const { snackbar, showError, closeSnackbar } = useSnackbar()
+  const { showError } = useSnackbar()
 
   const {
     handleReply,
@@ -72,8 +72,10 @@ export function ProfilePage() {
   } = usePostInteractions(currentUser?.username)
 
   const { data: postsData, isLoading: postsLoading, refetch: refetchPosts } = useUserPostsQuery(username, profile)
+  const { data: likedPostsData } = useLikedPostsQuery(username, profile)
 
   const postsCount = postsLoading ? undefined : postsData?.pages?.[0]?.totalItems
+  const likesCount = likedPostsData?.totalItems
 
   // Reset to Posts tab (index 0) when username or profile changes
   useEffect(() => {
@@ -143,7 +145,6 @@ export function ProfilePage() {
           onDeleteAccountClick={
             isOwnProfile ? dialogs.deleteAccountDialog.openDialog : undefined
           }
-          onError={showError}
         />
 
         <ProfileTabs
@@ -151,6 +152,7 @@ export function ProfilePage() {
           onChange={setTabValue}
           followersCount={followers?.totalItems}
           followingCount={following?.totalItems}
+          likesCount={likesCount}
           followersPrivate={!!(followers && '_collectionPrivate' in followers && followers._collectionPrivate)}
           followingPrivate={!!(following && '_collectionPrivate' in following && following._collectionPrivate)}
           postsCount={postsCount}
@@ -170,7 +172,6 @@ export function ProfilePage() {
               { label: 'Posts', index: 0 },
               { label: 'Reposts', index: 1 },
               { label: 'Replies', index: 2 },
-              { label: 'Likes', index: 3 },
             ].map(({ label, index }) => (
               <Box
                 key={label}
@@ -238,18 +239,6 @@ export function ProfilePage() {
               onDelete={handleDelete}
             />
           </TabPanel>
-
-          <TabPanel value={postTabValue} index={3}>
-            <LikesTab
-              profile={profile}
-              username={username}
-              onReply={handleReply}
-              onRepost={handleRepost}
-              onLike={handleLike}
-              onEdit={handleEdit}
-              onDelete={handleDelete}
-            />
-          </TabPanel>
         </TabPanel>
 
         <TabPanel value={tabValue} index={1}>
@@ -260,7 +249,6 @@ export function ProfilePage() {
             refetchCurrentUserFollowing={async () => {
               await refetchCurrentUserFollowing()
             }}
-            onError={showError}
             emptyMessage='No followers'
             hasNextPage={followersQuery?.hasNextPage}
             fetchNextPage={followersQuery?.fetchNextPage}
@@ -276,11 +264,22 @@ export function ProfilePage() {
             refetchCurrentUserFollowing={async () => {
               await refetchCurrentUserFollowing()
             }}
-            onError={showError}
             emptyMessage='Not following anyone'
             hasNextPage={followingQuery?.hasNextPage}
             fetchNextPage={followingQuery?.fetchNextPage}
             isFetchingNextPage={followingQuery?.isFetchingNextPage}
+          />
+        </TabPanel>
+
+        <TabPanel value={tabValue} index={3}>
+          <LikesTab
+            profile={profile}
+            username={username}
+            onReply={handleReply}
+            onRepost={handleRepost}
+            onLike={handleLike}
+            onEdit={handleEdit}
+            onDelete={handleDelete}
           />
         </TabPanel>
       </Box>
@@ -310,13 +309,6 @@ export function ProfilePage() {
         deletePost={deletePost}
         onEditPostClose={() => setEditPost(null)}
         onDeletePostClose={() => setDeletePost(null)}
-      />
-
-      <SnackbarNotification
-        open={snackbar.open}
-        message={snackbar.message}
-        severity={snackbar.severity}
-        onClose={closeSnackbar}
       />
     </TwitterLayout>
   )

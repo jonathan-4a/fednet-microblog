@@ -6,6 +6,7 @@ import {
   createUndoFollowActivity,
 } from '../../types/activitypub'
 import { API_BASE } from '../../config'
+import { useSnackbar } from '../useSnackbar'
 
 interface UseFollowMutationOptions {
   currentUsername: string | undefined
@@ -25,6 +26,8 @@ export function useFollowMutation({
   onError,
 }: UseFollowMutationOptions) {
   const queryClient = useQueryClient()
+  const { onRemoteError } = useSnackbar()
+  const handleError = onError ?? onRemoteError
 
   const follow = useMutation({
     mutationFn: async (params: FollowMutationParams) => {
@@ -216,7 +219,7 @@ export function useFollowMutation({
       if (context?.previousProfile) {
         queryClient.setQueryData(['profile'], context.previousProfile)
       }
-      onError?.(error.message)
+      handleError(error.message)
     },
   })
 
@@ -399,7 +402,7 @@ export function useFollowMutation({
       if (context?.previousProfile) {
         queryClient.setQueryData(['profile'], context.previousProfile)
       }
-      onError?.(error.message)
+      handleError(error.message)
     },
   })
 

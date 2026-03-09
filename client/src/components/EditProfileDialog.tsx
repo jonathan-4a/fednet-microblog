@@ -63,6 +63,16 @@ export function EditProfileDialog({
     }
   }
 
+  const fieldSx = {
+    '& .MuiOutlinedInput-root': {
+      borderRadius: 2,
+      backgroundColor: 'rgba(245,248,251,1)',
+      '& fieldset': { borderColor: 'rgba(216,226,236,1)', borderWidth: 1.5 },
+      '&:hover fieldset': { borderColor: 'rgba(15,20,25,0.24)' },
+      '&.Mui-focused fieldset': { borderColor: 'primary.main' },
+    },
+  } as const
+
   return (
     <Dialog open={open} onClose={onClose} maxWidth='sm' fullWidth>
       <DialogTitle>Edit Profile</DialogTitle>
@@ -76,6 +86,7 @@ export function EditProfileDialog({
           value={formData.displayName}
           onChange={handleChange('displayName')}
           margin='normal'
+          sx={fieldSx}
         />
         <TextField
           fullWidth
@@ -85,6 +96,7 @@ export function EditProfileDialog({
           margin='normal'
           multiline
           rows={4}
+          sx={fieldSx}
         />
       </DialogContent>
       <DialogActions sx={{ p: 2, gap: 1 }}>

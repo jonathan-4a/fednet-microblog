@@ -7,7 +7,6 @@ import {
   Button,
   Box,
   CircularProgress,
-  Alert,
   Typography,
   Avatar,
   Divider,
@@ -16,6 +15,7 @@ import DOMPurify from 'dompurify'
 import { useRepostMutation } from '../hooks/mutations/useRepostMutation'
 import type { Post } from '../types/posts'
 import { API_BASE } from '../config'
+import { COLORS } from '../constants/theme'
 
 interface RepostDialogProps {
   open: boolean
@@ -30,11 +30,7 @@ export function RepostDialog({
   post,
   onSuccess,
 }: RepostDialogProps) {
-  const {
-    mutateAsync: performRepost,
-    isPending: loading,
-    error,
-  } = useRepostMutation()
+  const { mutateAsync: performRepost, isPending: loading } = useRepostMutation()
 
   const handleClose = () => {
     if (!loading) {
@@ -115,12 +111,6 @@ export function RepostDialog({
           <Divider sx={{ my: 1.5 }} />
         </Box>
 
-        {error && (
-          <Alert severity='error' sx={{ mb: 2 }}>
-            {error.message}
-          </Alert>
-        )}
-
         <Typography sx={{ fontSize: 15, color: 'text.secondary' }}>
           Repost this post to your profile?
         </Typography>
@@ -154,10 +144,11 @@ export function RepostDialog({
             textTransform: 'none',
             fontWeight: 700,
             px: 3,
-            color: '#fff',
-            backgroundColor: '#00ba7c',
+            color: COLORS.white,
+            backgroundColor: 'primary.main',
             '&:hover': {
-              backgroundColor: '#009a68',
+              backgroundColor: 'primary.dark',
+              color: COLORS.white,
             },
             '&:disabled': {
               backgroundColor: 'rgba(0, 0, 0, 0.12)',

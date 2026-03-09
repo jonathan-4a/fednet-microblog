@@ -114,7 +114,7 @@ export function SettingsPage() {
               onChange={handleChange('registration_mode')}
             />
           }
-          label={<span style={{ fontSize: 13 }}>Invite-only Registration</span>}
+          label={<span style={{ fontSize: 13 }}>Invite Only</span>}
         />
 
         <Box sx={{ mt: 1.5 }}>
@@ -139,7 +139,7 @@ export function SettingsPage() {
                 onChange={handleChange('auto_fetch_peer_links')}
               />
             }
-            label={<span style={{ fontSize: 13 }}>Auto Fetch Peer Links</span>}
+            label={<span style={{ fontSize: 13 }}>Auto-Fetch Peer Links</span>}
           />
         </Box>
 
@@ -161,7 +161,7 @@ export function SettingsPage() {
               '&:hover': { boxShadow: 'none', filter: 'brightness(0.97)' },
             }}
           >
-            {saving ? 'Saving...' : 'Save Settings'}
+            {saving ? 'Saving...' : 'Save'}
           </Button>
         </Box>
       </Paper>

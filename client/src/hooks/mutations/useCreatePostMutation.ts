@@ -2,11 +2,13 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { createPost } from '../../services/posts'
 import { useAuthContext } from '../../hooks/useAuthContext'
+import { useSnackbar } from '../useSnackbar'
 import type { CreatePostRequest } from '../../types/posts'
 
 export function useCreatePostMutation() {
   const queryClient = useQueryClient()
   const { user } = useAuthContext()
+  const { onRemoteError } = useSnackbar()
 
   return useMutation({
     mutationFn: async (data: CreatePostRequest) => {
@@ -53,6 +55,7 @@ export function useCreatePostMutation() {
         }
       }
     },
+    onError: (e) => onRemoteError(e instanceof Error ? e.message : String(e)),
   })
 }
 

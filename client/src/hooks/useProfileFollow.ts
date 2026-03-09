@@ -1,6 +1,7 @@
 // src/hooks/useProfileFollow.ts
 import { useState, useEffect, useRef } from 'react'
 import { useFollowMutation } from './mutations/useFollowMutation'
+import { useSnackbar } from './useSnackbar'
 import type { OrderedCollection } from '../types/activitypub'
 
 interface UseProfileFollowOptions {
@@ -16,6 +17,8 @@ export function useProfileFollow({
   currentUserFollowing,
   onError,
 }: UseProfileFollowOptions) {
+  const { onRemoteError } = useSnackbar()
+  const handleError = onError ?? onRemoteError
   const [optimisticFollowing, setOptimisticFollowing] = useState<
     boolean | null
   >(null)
@@ -42,7 +45,7 @@ export function useProfileFollow({
         } else {
           setOptimisticFollowing(null) // No optimistic state, just clear it
         }
-        onError?.(error)
+        handleError(error)
       },
     })
 
