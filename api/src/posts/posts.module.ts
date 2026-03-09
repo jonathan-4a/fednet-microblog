@@ -3,6 +3,7 @@
 // Export use case classes
 export { CreatePost } from "./usecases/CreatePost";
 export { GetPost } from "./usecases/GetPost";
+export { GetPostByNoteId } from "./usecases/GetPostByNoteId";
 export { GetPostReplies } from "./usecases/GetPostReplies";
 export { GetPostLikes } from "./usecases/GetPostLikes";
 export { GetPostShares } from "./usecases/GetPostShares";
@@ -30,6 +31,7 @@ export {
   createGetLiked,
   createCreatePost,
   createGetPost,
+  createGetPostByNoteId,
   createGetPostReplies,
   createGetPostLikes,
   createGetPostShares,
@@ -42,6 +44,7 @@ export {
 // Export types
 export type { ICreatePost } from "./ports/in/ICreatePost";
 export type { IGetPost } from "./ports/in/IGetPost";
+export type { IGetPostByNoteId } from "./ports/in/IGetPostByNoteId";
 export type { IGetLiked } from "./ports/in/IGetLiked";
 export type { IGetPostReplies } from "./ports/in/IGetPostReplies";
 export type { IGetPostLikes } from "./ports/in/IGetPostLikes";
@@ -54,5 +57,7 @@ export type { LikesTable } from "./adapters/db/models/LikesSchema";
 export type { IPostRepository, PostRecord } from "./ports/out/IPostRepository";
 export { PostCreatedEvent } from "./domain/events";
 export type { ILikesRepository } from "./ports/out/ILikesRepository";
-export type { IAnnouncesRepository, AnnouncedRecord } from "./ports/out/IAnnouncesRepository";
-
+export type {
+  IAnnouncesRepository,
+  AnnouncedRecord,
+} from "./ports/out/IAnnouncesRepository";

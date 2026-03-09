@@ -7,6 +7,7 @@ import type {
   PostLikeRecord,
   LikeRecord,
 } from "../../../ports/out/ILikesRepository";
+import { normalizeNoteIdUrl } from "../../../utils/noteId";
 
 export class LikesRepository<
   DB extends { likes: LikesTable } = { likes: LikesTable },
@@ -17,24 +18,12 @@ export class LikesRepository<
     this.db = db as unknown as Kysely<{ likes: LikesTable }>;
   }
 
-  private normalizeNoteId(noteId: string): string {
-    let normalized = noteId;
-    if (normalized.includes("#") && normalized.includes("/u/")) {
-      const match = normalized.match(/^(https?:\/\/[^\/]+)\/u\/([^#]+)#(.+)$/);
-      if (match) {
-        const [, baseUrl, username, guid] = match;
-        normalized = `${baseUrl}/u/${username}/statuses/${guid}`;
-      }
-    }
-    return normalized;
-  }
-
   async getLikes(
     noteId: string,
     page: number,
     limit: number,
   ): Promise<PostLikeRecord[]> {
-    const normalizedNoteId = this.normalizeNoteId(noteId);
+    const normalizedNoteId = normalizeNoteIdUrl(noteId);
     const offset = (page - 1) * limit;
 
     const rows = await this.db
@@ -58,7 +47,7 @@ export class LikesRepository<
   }
 
   async countLikes(noteId: string): Promise<number> {
-    const normalizedNoteId = this.normalizeNoteId(noteId);
+    const normalizedNoteId = normalizeNoteIdUrl(noteId);
     const result = await this.db
       .selectFrom("likes")
       .select(({ fn }) => fn.count("note_id").as("count"))
@@ -101,7 +90,7 @@ export class LikesRepository<
   }
 
   async deleteLike(noteId: string, actor: string): Promise<void> {
-    const normalizedNoteId = this.normalizeNoteId(noteId);
+    const normalizedNoteId = normalizeNoteIdUrl(noteId);
     await this.db
       .deleteFrom("likes")
       .where((eb) =>
@@ -124,7 +113,10 @@ export class LikesRepository<
     return Number(result?.numDeletedRows ?? 0);
   }
 
-  async deleteLikesOnActorPosts(actorUrl: string, trx?: unknown): Promise<number> {
+  async deleteLikesOnActorPosts(
+    actorUrl: string,
+    trx?: unknown,
+  ): Promise<number> {
     const db = (trx ?? this.db) as Kysely<{ likes: LikesTable }>;
     const pattern = `${actorUrl}/statuses/%`;
     const result = await db
@@ -135,4 +127,3 @@ export class LikesRepository<
     return Number(result?.numDeletedRows ?? 0);
   }
 }
-

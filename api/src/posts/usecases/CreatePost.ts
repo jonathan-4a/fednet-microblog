@@ -47,7 +47,7 @@ export class CreatePost implements ICreatePost {
       authorUsername,
       content: trimmedContent,
       inReplyTo: inReplyTo ?? null,
-      noteId: noteId || null,
+      noteId: noteId || finalNoteId,
       createdAt,
     });
 
@@ -86,4 +86,3 @@ export class CreatePost implements ICreatePost {
     };
   }
 }
-
