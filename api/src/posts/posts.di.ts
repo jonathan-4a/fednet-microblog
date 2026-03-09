@@ -1,5 +1,4 @@
 // src/posts/posts.di.ts
-
 import type { Kysely } from "kysely";
 import type { IIdGenerator, IEventBus } from "@shared";
 import type {
@@ -7,9 +6,10 @@ import type {
   ICollectionSerializer,
   IActivitySerializer,
 } from "@apcore";
-import { createUserRepository } from "@users";
+import type { IUserRepository } from "@users";
 import { CreatePost } from "./usecases/CreatePost";
 import { GetPost } from "./usecases/GetPost";
+import { GetPostByNoteId } from "./usecases/GetPostByNoteId";
 import { GetPostReplies } from "./usecases/GetPostReplies";
 import { GetPostLikes } from "./usecases/GetPostLikes";
 import { GetPostShares } from "./usecases/GetPostShares";
@@ -24,48 +24,44 @@ import { createPostsRoutes as createPostsRoutesFactory } from "./adapters/http/P
 import type { PostsTable } from "./adapters/db/models/PostSchema";
 import type { LikesTable } from "./adapters/db/models/LikesSchema";
 import type { AnnouncesTable } from "./adapters/db/models/AnnouncesSchema";
+import type { IPostRepository } from "./ports/out/IPostRepository";
+import type { ILikesRepository } from "./ports/out/ILikesRepository";
+import type { IAnnouncesRepository } from "./ports/out/IAnnouncesRepository";
 
-const asUnknown = <T>(db: Kysely<T>) => db as Kysely<unknown>;
-
-// Factories - accept generic Kysely<T> for cross-module full DB
-
-export function createPostRepository<
-  T extends { posts: PostsTable },
->(db: Kysely<T>) {
-  return new PostRepository<T>(db as Kysely<T>);
+export function createPostRepository(
+  db: Kysely<{ posts: PostsTable }>,
+): PostRepository {
+  return new PostRepository(db);
 }
 
-export function createLikesRepository<
-  T extends { likes: LikesTable },
->(db: Kysely<T>) {
-  return new LikesRepository<T>(db as Kysely<T>);
+export function createLikesRepository(
+  db: Kysely<{ likes: LikesTable }>,
+): LikesRepository {
+  return new LikesRepository(db);
 }
 
-export function createAnnouncesRepository<
-  T extends { announces: AnnouncesTable },
->(db: Kysely<T>) {
-  return new AnnouncesRepository<T>(db as Kysely<T>);
+export function createAnnouncesRepository(
+  db: Kysely<{ announces: AnnouncesTable }>,
+): AnnouncesRepository {
+  return new AnnouncesRepository(db);
 }
 
-export function createGetLiked<
-  T extends { likes: LikesTable; users: import("@users").UsersTable },
->(db: Kysely<T>, collectionSerializer: ICollectionSerializer) {
-  const likesRepository = createLikesRepository(db);
-  const userRepository = createUserRepository(db);
+export function createGetLiked(
+  likesRepository: ILikesRepository,
+  userRepository: IUserRepository,
+  collectionSerializer: ICollectionSerializer,
+) {
   return new GetLiked(likesRepository, userRepository, collectionSerializer);
 }
 
-export function createCreatePost<
-  T extends { posts: PostsTable; users: import("@users").UsersTable },
->(
-  db: Kysely<T>,
+export function createCreatePost(
+  postRepository: IPostRepository,
+  userRepository: IUserRepository,
   idGenerator: IIdGenerator,
   eventBus: IEventBus,
   noteSerializer: INoteSerializer,
   activitySerializer: IActivitySerializer,
 ) {
-  const postRepository = createPostRepository(db);
-  const userRepository = createUserRepository(db);
   return new CreatePost(
     postRepository,
     userRepository,
@@ -76,16 +72,12 @@ export function createCreatePost<
   );
 }
 
-export function createGetPost<
-  T extends {
-    posts: PostsTable;
-    likes: LikesTable;
-    announces: AnnouncesTable;
-  },
->(db: Kysely<T>, noteSerializer: INoteSerializer) {
-  const postRepository = createPostRepository(db);
-  const likesRepository = createLikesRepository(db);
-  const announcesRepository = createAnnouncesRepository(db);
+export function createGetPost(
+  postRepository: IPostRepository,
+  likesRepository: ILikesRepository,
+  announcesRepository: IAnnouncesRepository,
+  noteSerializer: INoteSerializer,
+) {
   return new GetPost(
     postRepository,
     likesRepository,
@@ -94,19 +86,25 @@ export function createGetPost<
   );
 }
 
-export function createGetPostReplies<T extends { posts: PostsTable }>(
-  db: Kysely<T>,
+export function createGetPostByNoteId(
+  postRepository: IPostRepository,
+  ourOrigin: string,
+) {
+  return new GetPostByNoteId(postRepository, ourOrigin);
+}
+
+export function createGetPostReplies(
+  postRepository: IPostRepository,
   collectionSerializer: ICollectionSerializer,
 ) {
-  const postRepository = createPostRepository(db);
   return new GetPostReplies(postRepository, collectionSerializer);
 }
 
-export function createGetPostLikes<
-  T extends { posts: PostsTable; likes: LikesTable },
->(db: Kysely<T>, collectionSerializer: ICollectionSerializer) {
-  const postRepository = createPostRepository(db);
-  const likesRepository = createLikesRepository(db);
+export function createGetPostLikes(
+  postRepository: IPostRepository,
+  likesRepository: ILikesRepository,
+  collectionSerializer: ICollectionSerializer,
+) {
   return new GetPostLikes(
     postRepository,
     likesRepository,
@@ -114,11 +112,11 @@ export function createGetPostLikes<
   );
 }
 
-export function createGetPostShares<
-  T extends { posts: PostsTable; announces: AnnouncesTable },
->(db: Kysely<T>, collectionSerializer: ICollectionSerializer) {
-  const postRepository = createPostRepository(db);
-  const announcesRepository = createAnnouncesRepository(db);
+export function createGetPostShares(
+  postRepository: IPostRepository,
+  announcesRepository: IAnnouncesRepository,
+  collectionSerializer: ICollectionSerializer,
+) {
   return new GetPostShares(
     postRepository,
     announcesRepository,
@@ -126,69 +124,94 @@ export function createGetPostShares<
   );
 }
 
-export function createUpdatePost<T extends { posts: PostsTable }>(
-  db: Kysely<T>,
-) {
-  const postRepository = createPostRepository(db);
+export function createUpdatePost(postRepository: IPostRepository) {
   return new UpdatePost(postRepository);
 }
 
-export function createDeletePost<T extends { posts: PostsTable }>(
-  db: Kysely<T>,
-) {
-  const postRepository = createPostRepository(db);
+export function createDeletePost(postRepository: IPostRepository) {
   return new DeletePost(postRepository);
 }
 
-export function createPostsController<
-  T extends {
-    posts: PostsTable;
-    likes: LikesTable;
-    announces: AnnouncesTable;
-  },
->(
-  db: Kysely<T>,
+export function createPostsController(
+  postRepository: IPostRepository,
+  likesRepository: ILikesRepository,
+  announcesRepository: IAnnouncesRepository,
   idGenerator: IIdGenerator,
   eventBus: IEventBus,
   noteSerializer: INoteSerializer,
   collectionSerializer: ICollectionSerializer,
-  activitySerializer: IActivitySerializer,
 ) {
-  const getPost = createGetPost(db, noteSerializer);
-  const getPostReplies = createGetPostReplies(db, collectionSerializer);
-  const getPostLikes = createGetPostLikes(db, collectionSerializer);
-  const getPostShares = createGetPostShares(db, collectionSerializer);
-  const updatePost = createUpdatePost(db);
-  const deletePost = createDeletePost(db);
+  const getPost = createGetPost(
+    postRepository,
+    likesRepository,
+    announcesRepository,
+    noteSerializer,
+  );
+  const getPostReplies = createGetPostReplies(
+    postRepository,
+    collectionSerializer,
+  );
+  const getPostLikes = createGetPostLikes(
+    postRepository,
+    likesRepository,
+    collectionSerializer,
+  );
+  const getPostShares = createGetPostShares(
+    postRepository,
+    announcesRepository,
+    collectionSerializer,
+  );
+  const updatePost = createUpdatePost(postRepository);
+  const deletePost = createDeletePost(postRepository);
 
   return new PostsController(
     getPost,
+    getPostByNoteId,
     getPostReplies,
     getPostLikes,
+    getPostShares,
     getPostShares,
     updatePost,
     deletePost,
   );
 }
 
-export function createPostsRoutes<
-  T extends {
-    posts: PostsTable;
-    likes: LikesTable;
-    announces: AnnouncesTable;
-  },
->(
-  db: Kysely<T>,
+export function createPostsRoutes(
+  postRepository: IPostRepository,
+  likesRepository: ILikesRepository,
+  announcesRepository: IAnnouncesRepository,
   noteSerializer: INoteSerializer,
   collectionSerializer: ICollectionSerializer,
   activitySerializer: IActivitySerializer,
+  host: string,
+  protocol: string,
+  authMiddleware?: (
+    c: unknown,
+    next: () => Promise<void>,
+  ) => Promise<Response | void>,
 ) {
-  const getPost = createGetPost(db, noteSerializer);
-  const getPostReplies = createGetPostReplies(db, collectionSerializer);
-  const getPostLikes = createGetPostLikes(db, collectionSerializer);
-  const getPostShares = createGetPostShares(db, collectionSerializer);
-  const updatePost = createUpdatePost(db);
-  const deletePost = createDeletePost(db);
+  const getPost = createGetPost(
+    postRepository,
+    likesRepository,
+    announcesRepository,
+    noteSerializer,
+  );
+  const getPostReplies = createGetPostReplies(
+    postRepository,
+    collectionSerializer,
+  );
+  const getPostLikes = createGetPostLikes(
+    postRepository,
+    likesRepository,
+    collectionSerializer,
+  );
+  const getPostShares = createGetPostShares(
+    postRepository,
+    announcesRepository,
+    collectionSerializer,
+  );
+  const updatePost = createUpdatePost(postRepository);
+  const deletePost = createDeletePost(postRepository);
 
   return createPostsRoutesFactory(
     getPost,
@@ -197,6 +220,8 @@ export function createPostsRoutes<
     getPostShares,
     updatePost,
     deletePost,
+    host,
+    protocol,
+    authMiddleware,
   );
 }
-
