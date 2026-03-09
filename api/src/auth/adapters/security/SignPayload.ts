@@ -12,4 +12,3 @@ export function signPayload(
   signer.end();
   return signer.sign(privateKey, outputEncoding);
 }
-

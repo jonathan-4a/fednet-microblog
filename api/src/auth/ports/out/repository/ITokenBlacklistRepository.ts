@@ -5,4 +5,3 @@ export interface ITokenBlacklistRepository {
   isTokenBlacklisted(token: string): Promise<boolean>;
   cleanupExpiredTokens(): Promise<void>;
 }
-

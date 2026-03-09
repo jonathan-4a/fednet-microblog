@@ -51,4 +51,3 @@ export type {
   InviteTokenRecord,
 } from "./ports/out/repository/IInviteTokenRepository";
 export { CredentialsNotFoundError } from "./domain/AuthErrors";
-
