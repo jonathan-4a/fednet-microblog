@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "FedNet Microblog API",
-    "description": "A simple ActivityPub server for social media: users, follows, federation, and basic admin.",
+    "title": "Federated Microblog API",
+    "description": "A simple ActivityPub server for social media.",
     "version": "1.0.0",
     "license": {
       "name": "MIT",
@@ -39,6 +39,10 @@
     {
       "name": "Posts",
       "description": "ActivityPub endpoints for posts and post interactions (replies, likes, shares)"
+    },
+    {
+      "name": "Notifications",
+      "description": "User notifications (follows, likes, replies, reposts) and read state"
     }
   ],
   "paths": {
