@@ -34,6 +34,7 @@ const featureFiles = [
   'auth.json',
   'admin.json',
   'users.json',
+  'notifications.json',
   'webfinger.json',
   'federation.json',
   'socials.json',
