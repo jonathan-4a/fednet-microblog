@@ -20,4 +20,3 @@ export async function createAnnouncesSchema<
     .addPrimaryKeyConstraint("announces_pk", ["note_id", "actor"])
     .execute();
 }
-

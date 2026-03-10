@@ -55,4 +55,3 @@ export class GetPostShares implements IGetPostShares {
     return collection;
   }
 }
-

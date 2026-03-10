@@ -3,4 +3,3 @@
 export interface IDeleteUser {
   execute(input: { username: string }): Promise<void>;
 }
-

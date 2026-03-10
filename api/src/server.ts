@@ -7,7 +7,6 @@ import {
 } from "./composition-root";
 const PORT = parseInt(process.env.PORT!, 10);
 
-// Initialize schema and default server settings on startup
 async function initializeDatabase() {
   try {
     await ensureSchema();
@@ -20,7 +19,6 @@ async function initializeDatabase() {
   }
 }
 
-// Start server
 async function startServer() {
   try {
     await initializeDatabase();
@@ -40,5 +38,3 @@ async function startServer() {
 }
 
 void startServer();
-
-

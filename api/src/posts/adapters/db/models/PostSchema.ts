@@ -7,7 +7,7 @@ export interface PostsTable {
   author_username: string;
   content: string;
   in_reply_to: string | null;
-  note_id: string | null; // Full ActivityPub URL for remote posts
+  note_id: string | null;
   is_deleted: number;
   created_at: number;
   updated_at: number | null;
@@ -24,14 +24,10 @@ export async function createPostSchema<T extends { posts: PostsTable }>(
     .addColumn("author_username", "text", (col) => col.notNull())
     .addColumn("content", "text", (col) => col.notNull())
     .addColumn("in_reply_to", "text")
-    .addColumn("note_id", "text") // Full ActivityPub URL for remote posts
+    .addColumn("note_id", "text")
     .addColumn("is_deleted", "integer", (col) => col.notNull().defaultTo(0))
     .addColumn("created_at", "integer", (col) => col.notNull())
     .addColumn("updated_at", "integer")
     .addColumn("deleted_at", "integer")
-    // Note: Foreign key constraint removed to allow remote authors
-    // For local posts, author_username references users.username
-    // For remote posts, author_username can be any string (remote username or actor URL)
     .execute();
 }
-

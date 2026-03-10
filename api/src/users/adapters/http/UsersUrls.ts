@@ -5,4 +5,3 @@ export const UsersUrls = {
   search: "/search",
   invites: "/me/invites",
 };
-

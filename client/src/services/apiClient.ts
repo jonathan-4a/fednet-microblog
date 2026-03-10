@@ -13,8 +13,22 @@ export async function apiRequest(url: string, options: RequestInit = {}) {
   })
 
   if (!res.ok) {
-    const data = await res.json().catch(() => ({}))
-    throw new Error(data.message || res.statusText)
+    const text = await res.text()
+    try {
+      const data = JSON.parse(text) as { error?: string; message?: string }
+
+      // Prefer human-friendly message from the server when available,
+      // and only fall back to the raw error code/text if needed.
+      const msg =
+        (typeof data.message === 'string' && data.message.trim()) ||
+        (typeof data.error === 'string' && data.error.trim()) ||
+        text
+
+      throw new Error(msg)
+    } catch (e) {
+      if (e instanceof SyntaxError) throw new Error(text || res.statusText)
+      throw e
+    }
   }
 
   if (res.status === 204) return undefined

@@ -1,3 +1,4 @@
+// src/admin/adapters/http/AdminController.ts
 import type { Context } from "hono";
 import type {
   IGetAdminDashboard,
@@ -44,17 +45,16 @@ export class AdminController {
     private readonly updateSettingsCase: IUpdateSettings,
     private readonly listInviteTokens: IListInviteTokens,
     private readonly revokeInviteToken: IRevokeInviteToken,
+    private readonly domain: string,
+    private readonly port: string,
   ) {}
 
   private getHost(): string {
-    const domain = process.env.DOMAIN;
-    const port = process.env.PORT;
-
-    if (!domain || !port) {
+    if (!this.domain || !this.port) {
       throw new AdminInternalServerError("DOMAIN and PORT must be configured");
     }
 
-    return `${domain}:${port}`;
+    return `${this.domain}:${this.port}`;
   }
 
   async dashboard(c: Context) {
@@ -225,4 +225,3 @@ export class AdminController {
     return c.json(result);
   }
 }
-

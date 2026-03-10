@@ -7,4 +7,3 @@ export type AdminDashboard = AdminDashboardOutput;
 export interface IGetAdminDashboard {
   execute(input: { domain: string }): Promise<AdminDashboardOutput>;
 }
-

@@ -8,4 +8,3 @@ import {
 export interface IGenerateInviteToken {
   execute(input: GenerateInviteTokenInput): Promise<GenerateInviteTokenOutput>;
 }
-

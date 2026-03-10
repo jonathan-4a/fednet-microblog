@@ -20,4 +20,3 @@ export interface IJwtTokenService {
   verifyAuthToken(token: string): Promise<AuthTokenPayload | null>;
   decodeAuthToken(token: string): DecodedToken | null;
 }
-

@@ -8,4 +8,3 @@ export interface KeyPair {
 export interface IKeyPairGenerator {
   generateKeyPair(): Promise<KeyPair>;
 }
-

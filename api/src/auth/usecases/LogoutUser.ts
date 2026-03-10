@@ -27,4 +27,3 @@ export class LogoutUser implements ILogoutUser {
     await this.tokenBlacklistRepository.addToken(input.token, decoded.exp);
   }
 }
-

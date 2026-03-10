@@ -13,4 +13,3 @@ export function verifySignature(
   verifier.end();
   return verifier.verify(publicKey, signature, inputEncoding);
 }
-

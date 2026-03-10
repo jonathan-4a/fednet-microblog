@@ -13,12 +13,15 @@ export interface PostRecord {
 export interface IPostRepository {
   findByGuid(guid: string): Promise<PostRecord | null>;
   findByNoteId(noteId: string): Promise<PostRecord | null>;
+  findByGuidAndAuthor(
+    guid: string,
+    authorUsername: string,
+  ): Promise<PostRecord | null>;
   findByAuthor(
     authorUsername: string,
     limit?: number,
     offset?: number,
   ): Promise<PostRecord[]>;
-  /** Like findByAuthor but includes replies (all Create activities for outbox). */
   findByAuthorIncludingReplies(
     authorUsername: string,
     limit?: number,
@@ -31,14 +34,13 @@ export interface IPostRepository {
   ): Promise<PostRecord[]>;
   countByInReplyTo(inReplyTo: string): Promise<number>;
   countByAuthor(authorUsername: string): Promise<number>;
-  /** Like countByAuthor but includes replies (for outbox totalItems). */
   countByAuthorIncludingReplies(authorUsername: string): Promise<number>;
   create(post: {
     guid: string;
     authorUsername: string;
     content: string;
     inReplyTo: string | null;
-    noteId?: string | null; // Full ActivityPub URL for remote posts
+    noteId?: string | null;
     createdAt: number;
   }): Promise<void>;
   updateByGuid(
@@ -54,4 +56,3 @@ export interface IPostRepository {
     trx?: unknown,
   ): Promise<number>;
 }
-

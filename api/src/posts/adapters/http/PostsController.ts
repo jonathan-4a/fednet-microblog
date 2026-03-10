@@ -1,3 +1,4 @@
+// src/posts/adapters/http/PostsController.ts
 import type { Context } from "hono";
 import type { AuthTokenPayload } from "@auth";
 import type { IGetPost } from "../../ports/in/IGetPost";
@@ -12,7 +13,6 @@ import type {
   OrderedCollectionOutput,
   OrderedCollectionPageOutput,
 } from "@apcore";
-import { PostValidationError } from "../../domain/PostsErrors";
 
 type AppContext = Context<{
   Variables: {
@@ -28,19 +28,20 @@ export class PostsController {
     private readonly getPostShares: IGetPostShares,
     private readonly updatePostUseCase: IUpdatePost,
     private readonly deletePostUseCase: IDeletePost,
+    private readonly host: string,
+    private readonly protocol: string,
   ) {}
 
   async getPost(c: Context) {
     const username = c.req.param("username");
     const id = c.req.param("id");
     const guid = this.extractGuid(id);
-    const { host, protocol } = this.getHostAndProtocol();
 
     const result = (await this.getPostUseCase.execute({
       guid,
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
     })) as NoteOutput;
 
     return c.json(result);
@@ -53,15 +54,14 @@ export class PostsController {
     const limit = c.req.query("limit") || undefined;
 
     const guid = this.extractGuid(id);
-    const { host, protocol } = this.getHostAndProtocol();
     const pageNum = this.parsePage(page);
     const limitNum = this.parseLimit(limit);
 
     const result = (await this.getPostReplies.execute({
       guid,
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
       page: pageNum,
       limit: limitNum,
     })) as OrderedCollectionOutput | OrderedCollectionPageOutput;
@@ -76,15 +76,14 @@ export class PostsController {
     const limit = c.req.query("limit") || undefined;
 
     const guid = this.extractGuid(id);
-    const { host, protocol } = this.getHostAndProtocol();
     const pageNum = this.parsePage(page);
     const limitNum = this.parseLimit(limit);
 
     const result = (await this.getPostLikes.execute({
       guid,
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
       page: pageNum,
       limit: limitNum,
     })) as OrderedCollectionOutput | OrderedCollectionPageOutput;
@@ -99,15 +98,14 @@ export class PostsController {
     const limit = c.req.query("limit") || undefined;
 
     const guid = this.extractGuid(id);
-    const { host, protocol } = this.getHostAndProtocol();
     const pageNum = this.parsePage(page);
     const limitNum = this.parseLimit(limit);
 
     const result = (await this.getPostShares.execute({
       guid,
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
       page: pageNum,
       limit: limitNum,
     })) as OrderedCollectionOutput | OrderedCollectionPageOutput;
@@ -129,7 +127,7 @@ export class PostsController {
     if (!limit) return 20;
     const parsed = parseInt(limit, 10);
     if (isNaN(parsed) || parsed < 1) return 20;
-    return Math.min(parsed, 100); // Max limit of 100
+    return Math.min(parsed, 100);
   }
 
   async updatePost(c: AppContext) {
@@ -137,6 +135,9 @@ export class PostsController {
     const body = await c.req.json<UpdatePostRequestDto>();
     const guid = this.extractGuid(id);
     const user = c.get("user");
+    if (!user?.username) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
 
     const result = await this.updatePostUseCase.execute({
       guid,
@@ -151,6 +152,9 @@ export class PostsController {
     const id = c.req.param("id");
     const guid = this.extractGuid(id);
     const user = c.get("user");
+    if (!user?.username) {
+      return c.json({ error: "Unauthorized" }, 401);
+    }
 
     await this.deletePostUseCase.execute({
       guid,
@@ -159,20 +163,4 @@ export class PostsController {
 
     return c.json({ success: true });
   }
-
-  private getHostAndProtocol() {
-    const domain = process.env.DOMAIN;
-    const protocol = process.env.PROTOCOL;
-    const port = process.env.PORT;
-
-    if (!domain || !protocol || !port) {
-      throw new PostValidationError(
-        "DOMAIN, PROTOCOL, and PORT must be configured",
-      );
-    }
-
-    const host = port === "80" || port === "443" ? domain : `${domain}:${port}`;
-    return { host, protocol };
-  }
 }
-

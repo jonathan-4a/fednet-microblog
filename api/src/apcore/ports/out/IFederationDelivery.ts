@@ -5,8 +5,8 @@ export interface IFederationDelivery {
     targetActor: string,
     activity: Record<string, unknown>,
   ): Promise<void>;
+  getAuthorActorFromNote(noteId: string): Promise<string | null>;
   verifyActorExists(actorUrl: string): Promise<boolean>;
 }
 
 export const IFEDERATION_DELIVERY = "IFederationDelivery";
-

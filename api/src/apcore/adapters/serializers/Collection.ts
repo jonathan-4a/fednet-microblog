@@ -78,4 +78,3 @@ export class Collection implements ICollectionSerializer {
     return page;
   }
 }
-

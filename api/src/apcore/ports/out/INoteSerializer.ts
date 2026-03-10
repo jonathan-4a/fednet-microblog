@@ -13,4 +13,3 @@ export interface INoteSerializer {
     shareCount?: number,
   ): Record<string, unknown>;
 }
-

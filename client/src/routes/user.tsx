@@ -13,21 +13,31 @@ const PostDetailPage = lazy(() =>
   }))
 )
 
+const NotificationsPage = lazy(() =>
+  import('../pages/NotificationsPage').then((module) => ({
+    default: module.NotificationsPage,
+  }))
+)
+
 export const publicUserRoutes = [
   {
     path: '/profile/remote',
     element: <ProfilePage />,
   },
-  {
-    path: '/post',
-    element: <PostDetailPage />,
-  },
 ]
 
 export const userRoutes = [
   {
+    path: '/post',
+    element: <PostDetailPage />,
+  },
+  {
     path: '/profile/:username',
     element: <ProfilePage />,
+  },
+  {
+    path: '/notifications',
+    element: <NotificationsPage />,
   },
   {
     path: '/post/:username/:guid',

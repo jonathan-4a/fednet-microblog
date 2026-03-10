@@ -25,4 +25,3 @@ export interface IInviteTokenRepository {
   listAllTokens(): Promise<InviteTokenRecord[]>;
   revokeToken(token: string, trx?: Transaction): Promise<boolean>;
 }
-

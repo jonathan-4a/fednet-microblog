@@ -9,4 +9,3 @@ export interface ICredentialsRepository {
   findCredentialsByUsername(username: string): Promise<Credentials | undefined>;
   createCredentials(trx: Transaction, credentials: Credentials): Promise<void>;
 }
-

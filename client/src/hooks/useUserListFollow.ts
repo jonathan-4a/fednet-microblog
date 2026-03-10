@@ -1,6 +1,7 @@
 // src/hooks/useUserListFollow.ts
 import { useState, useEffect } from 'react'
 import { useFollowMutation } from './mutations/useFollowMutation'
+import { useSnackbar } from './useSnackbar'
 import { parseActorUrl } from '../utils/actor'
 import type { OrderedCollection } from '../types/activitypub'
 
@@ -17,6 +18,8 @@ export function useUserListFollow({
   refetchCurrentUserFollowing,
   onError,
 }: UseUserListFollowOptions) {
+  const { onRemoteError } = useSnackbar()
+  const handleError = onError ?? onRemoteError
   const [userFollowLoading, setUserFollowLoading] = useState<
     Record<string, boolean>
   >({})
@@ -29,9 +32,7 @@ export function useUserListFollow({
     onSuccess: () => {
       refetchCurrentUserFollowing()
     },
-    onError: (error) => {
-      onError?.(error)
-    },
+    onError: handleError,
   })
 
   const performFollow = async (targetActorId: string) => {
@@ -61,6 +62,8 @@ export function useUserListFollow({
         ...prev,
         [targetActorId]: false,
       }))
+      const msg = err instanceof Error ? err.message : String(err)
+      handleError(msg)
     } finally {
       setUserFollowLoading((prev) => ({ ...prev, [targetActorId]: false }))
     }
@@ -93,6 +96,8 @@ export function useUserListFollow({
         ...prev,
         [targetActorId]: true,
       }))
+      const msg = err instanceof Error ? err.message : String(err)
+      handleError(msg)
     } finally {
       setUserFollowLoading((prev) => ({ ...prev, [targetActorId]: false }))
     }

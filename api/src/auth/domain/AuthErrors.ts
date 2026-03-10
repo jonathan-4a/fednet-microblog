@@ -2,7 +2,6 @@
 
 import { DomainError } from "@shared";
 
-// Use when a user is not logged in or has an invalid session
 export class AuthenticationError extends DomainError {
   readonly errorCode = "AUTHENTICATION_ERROR";
 
@@ -11,7 +10,6 @@ export class AuthenticationError extends DomainError {
   }
 }
 
-// Use when credentials are not found for a user
 export class CredentialsNotFoundError extends DomainError {
   readonly errorCode = "CREDENTIALS_NOT_FOUND";
 
@@ -20,7 +18,6 @@ export class CredentialsNotFoundError extends DomainError {
   }
 }
 
-// Use for validation errors in auth operations
 export class AuthValidationError extends DomainError {
   readonly errorCode = "AUTH_VALIDATION_ERROR";
 
@@ -29,7 +26,6 @@ export class AuthValidationError extends DomainError {
   }
 }
 
-// Use when trying to create something that already exists (e.g. Username taken)
 export class AuthConflictError extends DomainError {
   readonly errorCode = "AUTH_CONFLICT_ERROR";
 
@@ -38,7 +34,6 @@ export class AuthConflictError extends DomainError {
   }
 }
 
-// Use for valid inputs that violate business logic (e.g. Invalid Invite, Account Suspended)
 export class AuthBusinessRuleError extends DomainError {
   readonly errorCode = "AUTH_BUSINESS_RULE_ERROR";
 
@@ -47,7 +42,6 @@ export class AuthBusinessRuleError extends DomainError {
   }
 }
 
-// Use for internal server errors in auth operations
 export class AuthInternalServerError extends DomainError {
   readonly errorCode = "AUTH_INTERNAL_SERVER_ERROR";
 
@@ -55,4 +49,3 @@ export class AuthInternalServerError extends DomainError {
     super(message);
   }
 }
-

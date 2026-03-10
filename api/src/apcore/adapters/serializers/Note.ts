@@ -58,4 +58,3 @@ export class Note implements INoteSerializer {
     return note;
   }
 }
-

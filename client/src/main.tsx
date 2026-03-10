@@ -9,6 +9,7 @@ import './index.css'
 import { COLORS } from './constants/theme'
 import App from './App.tsx'
 import { AuthInitializer } from './components/AuthInitializer'
+import { SnackbarProvider } from './contexts/SnackbarContext'
 import { setQueryClientRef } from './stores/authStore'
 
 const queryClient = new QueryClient({
@@ -110,9 +111,11 @@ createRoot(document.getElementById('root')!).render(
     <ThemeProvider theme={theme}>
       <CssBaseline />
       <QueryClientProvider client={queryClient}>
-        <AuthInitializer>
-          <App />
-        </AuthInitializer>
+        <SnackbarProvider>
+          <AuthInitializer>
+            <App />
+          </AuthInitializer>
+        </SnackbarProvider>
         <ReactQueryDevtools initialIsOpen={false} />
       </QueryClientProvider>
     </ThemeProvider>

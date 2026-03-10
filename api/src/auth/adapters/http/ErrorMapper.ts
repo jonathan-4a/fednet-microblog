@@ -8,5 +8,3 @@ export const errorCodeToStatus: Record<string, number> = {
   AUTH_BUSINESS_RULE_ERROR: 422,
   AUTH_INTERNAL_SERVER_ERROR: 500,
 };
-
-

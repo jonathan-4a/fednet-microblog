@@ -22,4 +22,3 @@ export class EnableUser implements IEnableUser {
     return { is_active: true };
   }
 }
-

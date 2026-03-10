@@ -13,4 +13,3 @@ export class GetServerSettings implements IGetServerSettings {
     return this.getServerSettings.execute({});
   }
 }
-

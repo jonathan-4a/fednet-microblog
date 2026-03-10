@@ -5,4 +5,3 @@ import type { EnsureAdminUserInput } from "./Admin.dto";
 export interface IEnsureAdminUser {
   execute(input: EnsureAdminUserInput): Promise<void>;
 }
-

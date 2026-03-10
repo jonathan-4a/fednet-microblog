@@ -5,4 +5,3 @@ import type { InviteTokenRecord } from "@auth";
 export interface IListInviteTokens {
   execute(): Promise<InviteTokenRecord[]>;
 }
-

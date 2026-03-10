@@ -4,6 +4,7 @@ import { getUserReplies, getRepliesCollectionPage } from '../../services/posts'
 import type { Post } from '../../types/posts'
 import { useAuthContext } from '../useAuthContext'
 import type { Actor } from '../../types/activitypub'
+import { resolveUrl } from '../../services/posts/utils'
 
 interface UseUserRepliesResult {
   posts: Post[]
@@ -27,14 +28,18 @@ export function useUserRepliesQuery(
       const actorUsername =
         username ||
         profile?.preferredUsername ||
-        profile?.id.split('/').pop() ||
+        profile?.id?.split('/').pop() ||
         'unknown'
 
       if (!pageParam) {
+        let outboxUrl = profile?.outbox
+        if (outboxUrl && profile?.id && (outboxUrl.startsWith('/') || !outboxUrl.startsWith('http'))) {
+          outboxUrl = resolveUrl(outboxUrl, profile.id)
+        }
         return await getUserReplies(actorUsername, {
           limit: 50,
           currentUsername: currentUser?.username,
-          outboxUrl: profile?.outbox,
+          outboxUrl,
         })
       }
 

@@ -4,6 +4,7 @@ import type { ILikesRepository } from "../ports/out/ILikesRepository";
 import type { IAnnouncesRepository } from "../ports/out/IAnnouncesRepository";
 import type { IGetPost } from "../ports/in/IGetPost";
 import type { GetPostInput } from "../ports/in/Posts.dto";
+import { extractUsernameFromActorUrl } from "../utils/author";
 import { PostNotFoundError } from "../domain/PostsErrors";
 
 export class GetPost implements IGetPost {
@@ -22,25 +23,12 @@ export class GetPost implements IGetPost {
       throw new PostNotFoundError("Post not found");
     }
 
-    // Normalize comparison: post.authorUsername might be stored as full URL or just username
-    // For local posts created via outbox, it's usually just the username (e.g., "admin")
-    // For remote posts, it's the full actor URL (e.g., "http://example.com/u/user")
     const expectedActorUrl = `${protocol}://${host}/u/${username}`;
 
-    // Extract username from authorUsername if it's a URL
-    const extractUsernameFromUrl = (url: string): string | null => {
-      const match = url.match(/\/u\/([^/]+)$/);
-      return match ? match[1] : null;
-    };
-
-    // Check if author matches:
-    // 1. Direct username match (local posts: "admin" === "admin")
-    // 2. Full actor URL match (remote posts or if stored as URL)
-    // 3. Extract username from authorUsername URL and compare
     const authorMatches =
       post.authorUsername === username ||
       post.authorUsername === expectedActorUrl ||
-      extractUsernameFromUrl(post.authorUsername) === username;
+      extractUsernameFromActorUrl(post.authorUsername) === username;
 
     if (!authorMatches) {
       throw new PostNotFoundError(
@@ -48,7 +36,6 @@ export class GetPost implements IGetPost {
       );
     }
 
-    // Use /statuses/ format to match what's stored in likes table (from GetOutbox)
     const noteId = `${protocol}://${host}/u/${username}/statuses/${guid}`;
     const actorUrl = `${protocol}://${host}/u/${username}`;
 
@@ -56,8 +43,6 @@ export class GetPost implements IGetPost {
     const sharesCount = await this.announcesRepository.countAnnounces(noteId);
     const repliesCount = await this.postRepository.countByInReplyTo(noteId);
 
-    // Convert Unix timestamp (seconds) to ISO string
-    // createdAt is stored as Unix timestamp in seconds, need to multiply by 1000 for Date constructor
     const publishedIso = new Date(post.createdAt * 1000).toISOString();
 
     const note = this.noteSerializer.create(
@@ -72,7 +57,6 @@ export class GetPost implements IGetPost {
       sharesCount,
     );
 
-    // Update replies collection with totalItems count
     if (note.replies && typeof note.replies === "object") {
       (note.replies as Record<string, unknown>).totalItems = repliesCount;
     }
@@ -80,4 +64,3 @@ export class GetPost implements IGetPost {
     return note;
   }
 }
-

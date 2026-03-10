@@ -5,11 +5,12 @@ import type { Post } from '../../types/posts'
 import { useAuthContext } from '../useAuthContext'
 import type { Actor } from '../../types/activitypub'
 import { API_BASE } from '../../config'
+import { resolveUrl } from '../../services/posts/utils'
 
 interface UseUserPostsResult {
   posts: Post[]
   replies: Post[]
-  totalItems: number
+  totalItems?: number
   next?: string | null
   private?: boolean
 }
@@ -24,7 +25,7 @@ export function useUserPostsQuery(
     queryKey: ['posts', username, profile?.outbox, currentUser?.username],
     queryFn: async ({ pageParam }) => {
       if (!username && !profile) {
-        return { posts: [], replies: [], totalItems: 0 }
+        return { posts: [], replies: [] }
       }
 
       // Extract username from profile if not provided
@@ -61,7 +62,11 @@ export function useUserPostsQuery(
         actorUsername = 'unknown'
       }
 
-      const outboxUrl = profile?.outbox || `${API_BASE}/u/${actorUsername}/outbox`
+      // Resolve relative outbox URLs (e.g. /users/bl00d/outbox) against actor id
+      let outboxUrl = profile?.outbox || `${API_BASE}/u/${actorUsername}/outbox`
+      if (outboxUrl && profile?.id && (outboxUrl.startsWith('/') || !outboxUrl.startsWith('http'))) {
+        outboxUrl = resolveUrl(outboxUrl, profile.id)
+      }
 
       // First page: fetch collection and parse posts
       // Don't pass page parameter - let the server return the base collection
@@ -81,6 +86,7 @@ export function useUserPostsQuery(
         actorUsername,
         {
           currentUsername: currentUser?.username,
+          outboxUrl,
         }
       )
     },

@@ -12,7 +12,6 @@ export interface FollowsTable {
 export async function createFollowSchema<T extends { follows: FollowsTable }>(
   db: Kysely<T>,
 ): Promise<void> {
-  // Drop table if it exists (to handle schema migration from username to actor)
   await db.schema.dropTable("follows").ifExists().execute();
 
   await db.schema
@@ -24,4 +23,3 @@ export async function createFollowSchema<T extends { follows: FollowsTable }>(
     .addPrimaryKeyConstraint("follows_pk", ["follower_actor", "followed_actor"])
     .execute();
 }
-

@@ -27,4 +27,3 @@ export class GetAdminPost implements IGetAdminPost {
     };
   }
 }
-

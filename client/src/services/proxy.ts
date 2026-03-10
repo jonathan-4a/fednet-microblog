@@ -24,6 +24,25 @@ export function isRemoteUrl(url: string): boolean {
   }
 }
 
+/** Build an error from a failed remote response (status + body). */
+async function buildRemoteError(
+  response: Response,
+  prefix: string
+): Promise<Error & { status: number }> {
+  let bodySnippet = ''
+  try {
+    const body = await response.text()
+    bodySnippet = body.substring(0, 200).trim()
+  } catch {
+    // ignore
+  }
+  let message = `${prefix}: ${response.status} ${response.statusText}`
+  if (bodySnippet) message += ` - ${bodySnippet}`
+  const error = new Error(message) as Error & { status: number }
+  error.status = response.status
+  return error
+}
+
 /**
  * Fetches a resource, proxying through the server if it's remote
  */
@@ -57,8 +76,10 @@ export async function fetchResource<T>(
     })
 
     if (!response.ok) {
-      const isExpected403 = response.status === 403 && (url.includes('/followers') || url.includes('/following'))
-      
+      const isExpected403 =
+        response.status === 403 &&
+        (url.includes('/followers') || url.includes('/following'))
+
       if (isExpected403) {
         return {
           type: 'OrderedCollectionPage',
@@ -67,12 +88,8 @@ export async function fetchResource<T>(
           _collectionPrivate: true,
         } as T
       }
-      
-      const error = new Error(
-        `Failed to fetch remote resource: ${response.status} ${response.statusText}`
-      ) as Error & { status?: number }
-      error.status = response.status
-      throw error
+
+      throw await buildRemoteError(response, 'Failed to fetch remote resource')
     }
 
     // Check Content-Type before parsing JSON
@@ -103,7 +120,9 @@ export async function fetchResource<T>(
     })
 
     if (!response.ok) {
-      const isExpected403 = response.status === 403 && (url.includes('/followers') || url.includes('/following'))
+      const isExpected403 =
+        response.status === 403 &&
+        (url.includes('/followers') || url.includes('/following'))
       if (isExpected403) {
         return {
           type: 'OrderedCollection',
@@ -113,13 +132,93 @@ export async function fetchResource<T>(
           _collectionPrivate: true,
         } as T
       }
-      throw new Error(
+      const error = new Error(
         `Failed to fetch resource: ${response.status} ${response.statusText}`
-      )
+      ) as Error & { status?: number }
+      error.status = response.status
+      throw error
     }
 
     return response.json()
   }
+}
+
+/**
+ * Fetches a resource and returns both body and headers (for Link header etc.)
+ */
+export async function fetchResourceWithHeaders<T>(
+  url: string,
+  options?: {
+    acceptHeader?: string
+    signal?: AbortSignal
+  }
+): Promise<{ data: T; headers: Headers }> {
+  const { useAuthStore } = await import('../stores/authStore')
+  const token = useAuthStore.getState().token
+  const isRemote = isRemoteUrl(url)
+
+  if (isRemote) {
+    if (!token) {
+      throw new Error('Authentication required to fetch remote resources')
+    }
+    const proxyUrl = `${API_BASE}/api/proxy?url=${encodeURIComponent(url)}`
+    const response = await fetch(proxyUrl, {
+      headers: {
+        Accept: options?.acceptHeader || 'application/activity+json',
+        Authorization: `Bearer ${token}`,
+      },
+      signal: options?.signal,
+    })
+    if (!response.ok) {
+      const isExpected403 =
+        response.status === 403 &&
+        (url.includes('/followers') || url.includes('/following'))
+      if (isExpected403) {
+        return {
+          data: {
+            type: 'OrderedCollection',
+            id: url,
+            orderedItems: [],
+            _collectionPrivate: true,
+          } as T,
+          headers: response.headers,
+        }
+      }
+
+      throw await buildRemoteError(response, 'Failed to fetch')
+    }
+    const contentType = response.headers.get('content-type') || ''
+    if (!contentType.includes('application/json') && !contentType.includes('application/activity+json')) {
+      const text = await response.text()
+      throw new Error(`Invalid content type: ${contentType}. Response: ${text.substring(0, 200)}`)
+    }
+    const data = (await response.json()) as T
+    return { data, headers: response.headers }
+  }
+
+  const headers: Record<string, string> = {
+    Accept: options?.acceptHeader || 'application/activity+json',
+  }
+  if (token) headers.Authorization = `Bearer ${token}`
+  const response = await fetch(url, { headers, signal: options?.signal })
+  if (!response.ok) {
+    const error = new Error(
+      `Failed to fetch: ${response.status} ${response.statusText}`
+    ) as Error & { status?: number }
+    error.status = response.status
+    throw error
+  }
+  const data = (await response.json()) as T
+  return { data, headers: response.headers }
+}
+
+/**
+ * Parses Link header and returns the URL for rel="next"
+ */
+export function parseLinkNext(linkHeader: string | null): string | null {
+  if (!linkHeader) return null
+  const match = linkHeader.match(/<([^>]+)>;\s*rel="next"/)
+  return match ? match[1].trim() : null
 }
 
 /**

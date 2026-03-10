@@ -10,4 +10,3 @@ export interface GetFollowersInput {
 export interface IGetFollowers {
   execute(input: GetFollowersInput): Promise<Record<string, unknown>>;
 }
-

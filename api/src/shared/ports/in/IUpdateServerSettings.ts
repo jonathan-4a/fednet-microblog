@@ -10,4 +10,3 @@ export interface IUpdateServerSettings {
     input: UpdateServerSettingsInput,
   ): Promise<UpdateServerSettingsOutput>;
 }
-

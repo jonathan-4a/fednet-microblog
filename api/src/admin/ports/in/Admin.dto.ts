@@ -119,4 +119,3 @@ export interface UpdateSettingsInput {
   allow_public_peers?: boolean;
   auto_fetch_peer_links?: boolean;
 }
-

@@ -40,7 +40,7 @@ export function TwitterLayout({ children }: TwitterLayoutProps) {
             display: { xs: 'none', sm: 'block' },
           }}
         >
-          <LeftSidebar isCompact={false} />
+          <LeftSidebar isCompact={false} showSearchInSidebar={isTablet} />
         </Box>
       )}
 

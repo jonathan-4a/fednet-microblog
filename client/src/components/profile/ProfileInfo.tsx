@@ -89,6 +89,8 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
               borderRadius: 4,
               backgroundColor: 'rgba(0,0,0,0.02)',
               border: '1px solid rgba(0,0,0,0.05)',
+              overflow: 'hidden',
+              minWidth: 0,
             }}
           >
             <Typography
@@ -106,11 +108,14 @@ export function ProfileInfo({ profile }: ProfileInfoProps) {
             </Typography>
             <Typography
               variant='body1'
+              component='div'
               sx={{
                 fontSize: '15px',
                 lineHeight: 1.5,
                 color: 'text.primary',
                 whiteSpace: 'pre-wrap',
+                overflowWrap: 'break-word',
+                wordBreak: 'break-word',
                 '& a': {
                   color: 'primary.main',
                   textDecoration: 'none',

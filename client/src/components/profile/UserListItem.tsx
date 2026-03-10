@@ -125,6 +125,8 @@ export function UserListItem({
                   WebkitLineClamp: 2,
                   WebkitBoxOrient: 'vertical',
                   overflow: 'hidden',
+                  overflowWrap: 'break-word',
+                  wordBreak: 'break-word',
                   color: 'text.secondary',
                   lineHeight: 1.4,
                 }}

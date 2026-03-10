@@ -1,21 +1,25 @@
 // src/apcore/handlers/HandleS2SCreateActivity.ts
 
 import type { IPostRepository } from "@posts";
+import type { IResolveNoteAuthorActor } from "../ports/out/IResolveNoteAuthorActor";
+import type { INotificationActivityEmitter } from "../ports/out/INotificationActivityEmitter";
 import type { ActivityReceivedEvent } from "../domain/events/ActivityReceivedEvent";
 
-/**
- * Handles incoming Create activities from remote servers (S2S).
- * Stores replies to our local posts so they appear in /statuses/:id/replies.
- * Matches how remote servers (e.g. Mastodon) behave.
- */
 export class HandleS2SCreateActivity {
-  constructor(private readonly postRepository: IPostRepository) {}
+  constructor(
+    private readonly postRepository: IPostRepository,
+    private readonly ourOrigin: string,
+    private readonly resolveNoteAuthorActor: IResolveNoteAuthorActor | null = null,
+    private readonly notify: INotificationActivityEmitter | null = null,
+  ) {}
 
   async handle(event: ActivityReceivedEvent): Promise<void> {
-    const { activity, host, protocol } = event.payload;
+    const { activity } = event.payload;
 
     const activityType =
-      typeof activity.type === "string" ? activity.type : String(activity?.type);
+      typeof activity.type === "string"
+        ? activity.type
+        : String(activity?.type);
     if (activityType !== "Create") {
       return;
     }
@@ -37,12 +41,6 @@ export class HandleS2SCreateActivity {
         ? note.inReplyTo
         : null;
     if (!inReplyTo) {
-      return; // Only store replies, not top-level posts
-    }
-
-    // Only store replies to our own server's content
-    const ourOrigin = `${protocol}://${host}`;
-    if (!inReplyTo.startsWith(ourOrigin)) {
       return;
     }
 
@@ -51,16 +49,18 @@ export class HandleS2SCreateActivity {
       return;
     }
 
-    // Idempotent: skip if we already have this note
     const existing = await this.postRepository.findByNoteId(noteId);
     if (existing) {
       return;
     }
 
     const content =
-      typeof note.content === "string" ? note.content : String(note?.content ?? "");
-    const trimmedContent = content.trim();
-    if (!trimmedContent) {
+      typeof note.content === "string"
+        ? note.content
+        : typeof note.content === "object"
+          ? JSON.stringify(note.content)
+          : null;
+    if (!content) {
       return;
     }
 
@@ -74,25 +74,34 @@ export class HandleS2SCreateActivity {
       return;
     }
 
-    // Use full noteId as guid for remote posts to avoid collisions (remote servers may use numeric IDs)
     const guid = noteId;
 
     const published =
-      typeof note.published === "string" ? note.published : new Date().toISOString();
+      typeof note.published === "string"
+        ? note.published
+        : new Date().toISOString();
     const createdAt = Math.floor(new Date(published).getTime() / 1000);
 
     await this.postRepository.create({
       guid,
       authorUsername: actorUrl,
-      content: trimmedContent,
+      content,
       inReplyTo,
       noteId,
       createdAt,
     });
+
+    const isRemoteReply = !actorUrl.startsWith(this.ourOrigin);
+    if (isRemoteReply && this.resolveNoteAuthorActor && this.notify) {
+      const recipientActor =
+        await this.resolveNoteAuthorActor.resolve(inReplyTo);
+      if (recipientActor && recipientActor !== actorUrl) {
+        await this.notify.onReplyDone(recipientActor, actorUrl, noteId);
+      }
+    }
 
     console.log(
       `[HandleS2SCreateActivity] Stored inbound reply ${noteId} to ${inReplyTo}`,
     );
   }
 }
-

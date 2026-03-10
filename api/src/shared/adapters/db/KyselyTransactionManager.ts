@@ -12,4 +12,3 @@ export class TransactionManagerService implements ITransactionManager {
     });
   }
 }
-

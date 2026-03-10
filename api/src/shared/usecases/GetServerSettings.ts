@@ -52,4 +52,3 @@ export class GetServerSettings implements IGetServerSettings {
     return rawValue.toLowerCase() === "true";
   }
 }
-

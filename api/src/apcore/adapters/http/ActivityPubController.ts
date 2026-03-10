@@ -8,7 +8,6 @@ import type { AuthTokenPayload } from "@auth";
 import { SignatureGuard } from "./SignatureGuard";
 import {
   ValidationError,
-  InternalServerError,
   AuthenticationError,
   AuthorizationError,
 } from "../../domain/ActivityPubErrors";
@@ -28,6 +27,9 @@ export class ActivityPubController {
     private readonly getOutboxUseCase: IGetOutbox,
     private readonly dispatchS2SActivityEvent: IDispatchS2SActivityEvent,
     private readonly dispatchC2SActivityEvent: IDispatchC2SActivityEvent,
+    private readonly host: string,
+    private readonly protocol: string,
+    private readonly domain: string,
   ) {}
 
   async webfinger(c: Context) {
@@ -37,23 +39,16 @@ export class ActivityPubController {
       throw new ValidationError("Missing resource parameter");
     }
 
-    const domain = process.env.DOMAIN;
-    const protocol = process.env.PROTOCOL;
-
-    if (!domain || !protocol) {
-      throw new InternalServerError("DOMAIN and PROTOCOL must be configured");
-    }
-
     const response = await this.getWebFinger.execute({
       resource,
-      domain,
-      protocol,
+      domain: this.domain,
+      protocol: this.protocol,
     });
 
     return c.json(response);
   }
 
-  async getInbox(c: AppContext) {
+  getInbox(c: AppContext) {
     const username = c.req.param("username");
     const user = c.get("user");
 
@@ -61,12 +56,7 @@ export class ActivityPubController {
       throw new AuthenticationError("Authentication required");
     }
 
-    const domain = process.env.DOMAIN;
-    if (!domain) {
-      throw new InternalServerError("DOMAIN must be configured");
-    }
-
-    const expectedUserAddress = `${username}@${domain}`;
+    const expectedUserAddress = `${username}@${this.domain}`;
 
     if (user.address !== expectedUserAddress) {
       throw new AuthorizationError("You can only view your own inbox");
@@ -83,12 +73,12 @@ export class ActivityPubController {
 
     try {
       await this.signatureGuard.verify(c.req.raw);
-    } catch (error) {
+    } catch {
       throw new AuthenticationError("Invalid or missing HTTP signature");
     }
 
     const activity = await c.req.json<Record<string, unknown>>();
-    this.dispatchS2SActivityEvent.execute({ username, activity });
+    await this.dispatchS2SActivityEvent.executeAndAwait({ username, activity });
 
     return c.json({ status: "accepted" }, 202);
   }
@@ -98,17 +88,6 @@ export class ActivityPubController {
     const page = c.req.query("page");
     const limit = c.req.query("limit");
 
-    const domain = process.env.DOMAIN;
-    const protocol = process.env.PROTOCOL;
-    const port = process.env.PORT;
-
-    if (!domain || !protocol || !port) {
-      throw new InternalServerError(
-        "DOMAIN, PROTOCOL, and PORT must be configured",
-      );
-    }
-
-    const host = port === "80" || port === "443" ? domain : `${domain}:${port}`;
     const pageNum = page ? parseInt(page, 10) : 1;
     const limitNum = limit ? parseInt(limit, 10) : 20;
 
@@ -121,8 +100,8 @@ export class ActivityPubController {
 
     const result = await this.getOutboxUseCase.execute({
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
       page: pageNum,
       limit: limitNum,
     });
@@ -138,18 +117,7 @@ export class ActivityPubController {
       throw new AuthorizationError("Forbidden");
     }
 
-    const domain = process.env.DOMAIN;
-    const protocol = process.env.PROTOCOL;
-    const port = process.env.PORT;
-
-    if (!domain || !protocol || !port) {
-      throw new InternalServerError(
-        "DOMAIN, PROTOCOL, and PORT must be configured",
-      );
-    }
-
-    const host = port === "80" || port === "443" ? domain : `${domain}:${port}`;
-    const actorUrl = `${protocol}://${host}/u/${username}`;
+    const actorUrl = `${this.protocol}://${this.host}/u/${username}`;
     const activity = await c.req.json<Record<string, unknown>>();
     const incomingActor =
       typeof activity?.actor === "string" ? activity.actor : undefined;
@@ -160,26 +128,24 @@ export class ActivityPubController {
 
     const activityType = activity?.type;
 
-    // For Follow activities, pass response callback
-    if (activityType === "Follow") {
-      const responseCallback = (error?: Error) => {
-        // Note: In Bun, we can't use Express response object
-        // This will need to be handled differently - maybe via events or return value
-        if (error) {
-          console.error("Follow activity error:", error);
-        }
-      };
+    const needsAwait = ["Follow", "Undo", "Like", "Announce"].includes(
+      activityType as string,
+    );
+    const isCreateWithRemoteReply =
+      activityType === "Create" &&
+      activity?.object &&
+      typeof activity.object === "object" &&
+      typeof (activity.object as Record<string, unknown>).inReplyTo ===
+        "string";
 
-      this.dispatchC2SActivityEvent.execute({
+    if (needsAwait || isCreateWithRemoteReply) {
+      await this.dispatchC2SActivityEvent.executeAndAwait({
         username,
         activity,
-        responseCallback,
       });
-
       return c.json({ status: "accepted" }, 200);
     }
 
-    // For other activities, return immediately
     this.dispatchC2SActivityEvent.execute({ username, activity });
     return c.json({ status: "accepted" }, 202);
   }
@@ -187,25 +153,12 @@ export class ActivityPubController {
   async getActor(c: Context) {
     const username = c.req.param("username");
 
-    const domain = process.env.DOMAIN;
-    const protocol = process.env.PROTOCOL;
-    const port = process.env.PORT;
-
-    if (!domain || !protocol || !port) {
-      throw new InternalServerError(
-        "DOMAIN, PROTOCOL, and PORT must be configured",
-      );
-    }
-
-    const host = port === "80" || port === "443" ? domain : `${domain}:${port}`;
-
     const result = await this.getActorUseCase.execute({
       username,
-      host,
-      protocol,
+      host: this.host,
+      protocol: this.protocol,
     });
 
     return c.json(result);
   }
 }
-

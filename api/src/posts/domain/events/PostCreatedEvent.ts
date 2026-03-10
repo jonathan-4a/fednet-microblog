@@ -14,4 +14,3 @@ export class PostCreatedEvent extends BaseEvent<PostCreatedPayload> {
     super("post.created", payload);
   }
 }
-

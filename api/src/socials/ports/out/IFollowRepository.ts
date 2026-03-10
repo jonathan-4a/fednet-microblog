@@ -21,7 +21,5 @@ export interface IFollowRepository {
     status: FollowStatus,
   ): Promise<void>;
   deleteFollow(followerActor: string, followedActor: string): Promise<void>;
-  /** Delete all follows where actor is follower or followed. Used for user cascade delete. */
   deleteAllByActor(actor: string, trx?: unknown): Promise<number>;
 }
-

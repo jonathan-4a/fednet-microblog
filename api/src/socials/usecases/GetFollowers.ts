@@ -61,4 +61,3 @@ export class GetFollowers implements IGetFollowers {
     );
   }
 }
-

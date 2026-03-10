@@ -6,4 +6,3 @@ import type { AdminPaginatedPosts } from "./Admin.dto";
 export interface IListAdminPosts {
   execute(input: PostsPaginationParams): Promise<AdminPaginatedPosts>;
 }
-

@@ -68,4 +68,3 @@ export class LoginUser implements ILoginUser {
     };
   }
 }
-

@@ -10,7 +10,58 @@ import {
 } from "../../domain/ActivityPubErrors";
 
 export class FederationDelivery implements IFederationDelivery {
-  constructor(private readonly httpSignatureService: HttpSignatureService) {}
+  constructor(
+    private readonly httpSignatureService: HttpSignatureService,
+    private readonly ourOrigin: string,
+  ) {}
+
+  async getAuthorActorFromNote(noteId: string): Promise<string | null> {
+    if (noteId.startsWith(this.ourOrigin)) {
+      const match = noteId.match(/^(.+\/u\/[^/]+)/);
+      if (match) return match[1];
+      throw new FetchError(
+        `Could not parse local note URL for author: ${noteId}`,
+      );
+    }
+    let response: Response;
+    try {
+      response = await fetch(noteId, {
+        headers: { Accept: "application/activity+json" },
+      });
+    } catch (e) {
+      const msg =
+        e instanceof Error ? e.message : "Network error fetching note";
+      throw new FetchError(`Failed to fetch remote note: ${msg}`);
+    }
+    if (!response.ok) {
+      const body = await response.text();
+      throw new FetchError(
+        `Remote server returned ${response.status} when fetching note`,
+        response.status,
+        body || undefined,
+      );
+    }
+    let note: Record<string, unknown>;
+    try {
+      note = (await response.json()) as Record<string, unknown>;
+    } catch {
+      throw new FetchError("Remote note response is not valid JSON", 502);
+    }
+    const attributedTo = note.attributedTo;
+    if (typeof attributedTo === "string") return attributedTo;
+    if (
+      attributedTo &&
+      typeof attributedTo === "object" &&
+      typeof (attributedTo as Record<string, unknown>).id === "string"
+    ) {
+      return (attributedTo as Record<string, unknown>).id as string;
+    }
+    throw new FetchError(
+      "Note has no valid attributedTo (author)",
+      422,
+      undefined,
+    );
+  }
 
   async sendToInbox(
     targetActor: string,
@@ -98,7 +149,6 @@ export class FederationDelivery implements IFederationDelivery {
   ): Promise<void> {
     const messageBody = JSON.stringify(message);
 
-    // Use HttpSignatureService to sign the request
     const signedHeaders = await this.httpSignatureService.signRequest({
       method: "POST",
       url: inbox,
@@ -120,11 +170,16 @@ export class FederationDelivery implements IFederationDelivery {
       body: messageBody,
     });
 
-    console.log(`[FederationDelivery] Response status: ${response.status}`);
+    console.log(
+      `[FederationDelivery] Remote server response: target=${inbox} status=${response.status}`,
+    );
 
     if (!response.ok) {
       const errorText = await response.text();
-      throw new FetchError(`HTTP ${response.status}: ${errorText}`);
+      console.error(
+        `[FederationDelivery] Remote server response: status=${response.status} body=${errorText}`,
+      );
+      throw new FetchError(errorText, response.status, errorText);
     }
   }
 
@@ -145,5 +200,3 @@ export class FederationDelivery implements IFederationDelivery {
     }
   }
 }
-
-

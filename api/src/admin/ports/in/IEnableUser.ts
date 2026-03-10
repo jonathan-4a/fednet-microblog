@@ -3,4 +3,3 @@
 import type { IUpdateUserStatus } from "./IUpdateUserStatus";
 
 export type IEnableUser = IUpdateUserStatus;
-

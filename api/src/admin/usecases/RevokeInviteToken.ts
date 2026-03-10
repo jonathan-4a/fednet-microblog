@@ -51,4 +51,3 @@ export class RevokeInviteToken implements IRevokeInviteToken {
     };
   }
 }
-

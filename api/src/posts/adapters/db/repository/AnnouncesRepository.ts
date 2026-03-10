@@ -133,4 +133,3 @@ export class AnnouncesRepository<
     return Number(result?.numDeletedRows ?? 0);
   }
 }
-

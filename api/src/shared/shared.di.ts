@@ -1,5 +1,4 @@
 // src/shared/shared.di.ts
-
 import { TransactionManagerService } from "./adapters/db/KyselyTransactionManager";
 import { IdGenerator } from "./adapters/IdGenerator";
 import { ServerSettingsRepository } from "./adapters/db/ServerSettingsRepository";
@@ -14,6 +13,8 @@ import {
 import type { IGetRemoteResource } from "@apcore";
 import type { Kysely } from "kysely";
 import type { ServerSettingsTable } from "./adapters/db/ServerSettingsSchema";
+import type { IServerSettingsRepository } from "./ports/out/IServerSettingsRepository";
+import type { IGetServerSettings } from "./ports/in/IGetServerSettings";
 
 export function createTransactionManager<T>(db: Kysely<T>) {
   return new TransactionManagerService(db);
@@ -27,37 +28,39 @@ export function createEventBus() {
   return new EventBus(createLogger("shared"));
 }
 
-export function createGetServerSettings<
-  T extends { server_settings: ServerSettingsTable },
->(db: Kysely<T>) {
-  const repository = new ServerSettingsRepository<T>(
-    db as unknown as Kysely<T>,
-  );
-  return new GetServerSettings(repository);
+export function createServerSettingsRepository(
+  db: Kysely<{ server_settings: ServerSettingsTable }>,
+): ServerSettingsRepository {
+  return new ServerSettingsRepository(db);
 }
 
-export function createUpdateServerSettings<
-  T extends { server_settings: ServerSettingsTable },
->(db: Kysely<T>) {
-  const repository = new ServerSettingsRepository<T>(
-    db as unknown as Kysely<T>,
-  );
-  const getSettings = createGetServerSettings(db);
-  return new UpdateServerSettings(repository, getSettings);
+export function createGetServerSettings(
+  serverSettingsRepository: IServerSettingsRepository,
+) {
+  return new GetServerSettings(serverSettingsRepository);
 }
 
-export function createAppRoutes<
-  T extends { server_settings: ServerSettingsTable },
->(
-  db: Kysely<T>,
+export function createUpdateServerSettings(
+  serverSettingsRepository: IServerSettingsRepository,
+  getServerSettings: IGetServerSettings,
+) {
+  return new UpdateServerSettings(serverSettingsRepository, getServerSettings);
+}
+
+export function createAppRoutes(
+  getServerSettings: IGetServerSettings,
+  protocol: string,
+  domain: string,
+  port: string,
   proxyAuthMiddleware?: AuthMiddleware,
   getRemoteResource?: IGetRemoteResource,
 ) {
-  const getSettings = createGetServerSettings(db);
   return createAppRoutesFactory(
-    getSettings,
+    getServerSettings,
+    protocol,
+    domain,
+    port,
     proxyAuthMiddleware,
     getRemoteResource,
   );
 }
-

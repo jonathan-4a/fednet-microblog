@@ -10,6 +10,7 @@ import type { Post } from '../../types/posts'
 import { getOutbox } from '../federation'
 import { fetchResource, fetchLikedPostIds, processInBatches } from './utils'
 import { parseOutboxReplies, parseOutboxPageItems } from './parsers'
+import { getPostsViaMastodonApi, getPostsViaMastodonApiPage, isMastodonCompatibleOutbox, isMastodonStatusesUrl } from './mastodonApi'
 
 export async function getUserPosts(
   username: string,
@@ -22,7 +23,7 @@ export async function getUserPosts(
 ): Promise<{
   posts: Post[]
   replies: Post[]
-  totalItems: number
+  totalItems?: number
   next?: string | null
   private?: boolean
 }> {
@@ -31,6 +32,7 @@ export async function getUserPosts(
     : new Set<string>()
 
   const outboxUrl = params?.outboxUrl || `${API_BASE}/u/${username}/outbox`
+
   let collection: OrderedCollection
   try {
     collection = await getOutbox(
@@ -47,7 +49,16 @@ export async function getUserPosts(
   } catch (e) {
     const err = e as { status?: number }
     if (err && typeof err === 'object' && err.status === 403) {
-      return { posts: [], replies: [], totalItems: 0, private: true }
+      return { posts: [], replies: [], private: true }
+    }
+    // Akkoma/Pleroma require HTTP signatures for outbox; keyId points to localhost so remote rejects with 401.
+    // Fall back to Mastodon API which works without signing. Mastodon (mas.to etc) ActivityPub works, so try it first.
+    if (err && typeof err === 'object' && err.status === 401 && isMastodonCompatibleOutbox(outboxUrl)) {
+      return getPostsViaMastodonApi(outboxUrl, {
+        limit: params?.limit ?? 20,
+        currentUsername: params?.currentUsername,
+        likedPostIds,
+      })
     }
     throw e
   }
@@ -197,14 +208,14 @@ export async function getUserPosts(
       totalItems = firstPage.totalItems
     }
   }
-  // Don't use orderedItems.length as fallback - it's misleading when we only have the first page
-  // If totalItems is missing, we'll return 0 and let the UI handle it
-  // The actual total should come from the collection, not the first page count
+  // If totalItems is missing (e.g. server doesn't send it), don't default to 0 so the UI can show nothing instead of "0 Posts"
+  const resolvedTotalItems =
+    totalItems !== undefined && totalItems !== null ? totalItems : undefined
 
   return {
     posts,
     replies,
-    totalItems: totalItems ?? 0,
+    ...(resolvedTotalItems !== undefined && { totalItems: resolvedTotalItems }),
     next,
   }
 }
@@ -215,6 +226,7 @@ export async function getPostCollectionPage(
   username: string,
   params?: {
     currentUsername?: string
+    outboxUrl?: string
   }
 ): Promise<{
   posts: Post[]
@@ -225,6 +237,20 @@ export async function getPostCollectionPage(
   const likedPostIds = params?.currentUsername
     ? await fetchLikedPostIds(`${API_BASE}/u/${params.currentUsername}/liked`)
     : new Set<string>()
+
+  // Mastodon API pagination (max_id in URL from Link header)
+  if (isMastodonStatusesUrl(pageUrl) && params?.outboxUrl) {
+    const result = await getPostsViaMastodonApiPage(pageUrl, {
+      currentUsername: params.currentUsername,
+      likedPostIds,
+    })
+    return {
+      posts: result.posts,
+      replies: result.replies,
+      totalItems: result.totalItems ?? 0,
+      next: result.next ?? null,
+    }
+  }
 
   const page = await fetchResource<OrderedCollectionPage>(pageUrl)
   const orderedItems = (page.orderedItems || []) as unknown[]
@@ -282,10 +308,29 @@ export async function getUserReplies(
     : new Set<string>()
 
   const outboxUrl = params?.outboxUrl || `${API_BASE}/u/${username}/outbox`
-  let response = (await getOutbox(outboxUrl, {
-    page: params?.page,
-    limit: params?.limit,
-  })) as OutboxResponse | OrderedCollection
+  let response: OutboxResponse | OrderedCollection
+  try {
+    response = (await getOutbox(outboxUrl, {
+      page: params?.page,
+      limit: params?.limit,
+    })) as OutboxResponse | OrderedCollection
+  } catch (e) {
+    const err = e as { status?: number }
+    if (err && typeof err === 'object' && err.status === 401 && isMastodonCompatibleOutbox(outboxUrl)) {
+      const { replies: replyPosts } = await getPostsViaMastodonApi(outboxUrl, {
+        limit: params?.limit ?? 50,
+        currentUsername: params?.currentUsername,
+        likedPostIds,
+        repliesOnly: true,
+      })
+      return {
+        posts: replyPosts,
+        totalItems: replyPosts.length,
+        next: null,
+      }
+    }
+    throw e
+  }
 
   // Mastodon with ?limit=50 returns OrderedCollection with first as URL string (no items at root).
   // We must fetch the first page to get orderedItems; otherwise we get 0 replies.

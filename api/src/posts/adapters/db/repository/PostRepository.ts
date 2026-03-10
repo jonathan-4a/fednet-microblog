@@ -1,33 +1,87 @@
-// src/posts/adapters/db/repository/PostRepository.ts
-
-import type { Kysely } from "kysely";
+import type { Kysely, ExpressionBuilder } from "kysely";
 import type { PostsTable } from "../models/PostSchema";
 import type {
   IPostRepository,
   PostRecord,
 } from "../../../ports/out/IPostRepository";
+import { extractUsernameFromActorUrl } from "../../../utils/author";
+import { normalizeNoteIdUrl } from "../../../utils/noteId";
 
-export class PostRepository<
-  DB extends { posts: PostsTable } = { posts: PostsTable },
-> implements IPostRepository {
-  private readonly db: Kysely<{ posts: PostsTable }>;
+type DB = { posts: PostsTable };
 
-  constructor(db: Kysely<DB>) {
-    this.db = db as unknown as Kysely<{ posts: PostsTable }>;
+const COLUMNS = [
+  "guid",
+  "author_username as authorUsername",
+  "content",
+  "in_reply_to as inReplyTo",
+  "note_id as noteId",
+  "created_at as createdAt",
+  "updated_at as updatedAt",
+] as const;
+
+export class PostRepository<TDB extends DB = DB> implements IPostRepository {
+  private readonly db: Kysely<DB>;
+
+  constructor(db: Kysely<TDB>) {
+    this.db = db as unknown as Kysely<DB>;
   }
 
-  private normalizeNoteIdUrl(url: string): string {
-    let normalized = url;
-    if (normalized.includes("#") && normalized.includes("/u/")) {
-      const match = normalized.match(/^(https?:\/\/[^\/]+)\/u\/([^#]+)#(.+)$/);
+  private mapRow(row: {
+    guid: string;
+    authorUsername: string;
+    content: string;
+    inReplyTo: string | null;
+    noteId?: string | null;
+    createdAt: number;
+    updatedAt?: number | null;
+  }): PostRecord {
+    return {
+      guid: row.guid,
+      authorUsername: row.authorUsername,
+      content: row.content,
+      inReplyTo: row.inReplyTo,
+      noteId: row.noteId ?? null,
+      createdAt: row.createdAt,
+      updatedAt: row.updatedAt ?? null,
+    };
+  }
+
+  private inReplyToWhere(
+    eb: ExpressionBuilder<DB, "posts">,
+    inReplyTo: string,
+  ) {
+    const normalized = normalizeNoteIdUrl(inReplyTo);
+    const conditions = [
+      eb("in_reply_to", "=", normalized),
+      eb("in_reply_to", "=", inReplyTo),
+    ];
+
+    if (normalized.startsWith("http://") && !normalized.includes(":80")) {
+      const match = normalized.match(/^http:\/\/([^\/]+)(\/.*)$/);
       if (match) {
-        const [, baseUrl, username, guid] = match;
-        normalized = `${baseUrl}/u/${username}/statuses/${guid}`;
+        conditions.push(
+          eb("in_reply_to", "=", `http://${match[1]}:80${match[2]}`),
+        );
       }
     }
-    normalized = normalized.replace(/^http:\/\/([^/:]+):80\//, "http://$1/");
-    normalized = normalized.replace(/^https:\/\/([^/:]+):443\//, "https://$1/");
-    return normalized;
+
+    if (normalized.includes(":80/")) {
+      conditions.push(eb("in_reply_to", "=", normalized.replace(":80/", "/")));
+    }
+
+    return eb.or(conditions);
+  }
+
+  private authorWhere(
+    eb: ExpressionBuilder<DB, "posts">,
+    authorUsername: string,
+  ) {
+    return eb.or([
+      eb("author_username", "=", authorUsername),
+      ...(extractUsernameFromActorUrl(authorUsername)
+        ? []
+        : [eb("author_username", "like", `%/u/${authorUsername}%`)]),
+    ]);
   }
 
   async create(post: {
@@ -57,63 +111,38 @@ export class PostRepository<
   async findByGuid(guid: string): Promise<PostRecord | null> {
     const row = await this.db
       .selectFrom("posts")
-      .select([
-        "guid",
-        "author_username as authorUsername",
-        "content",
-        "in_reply_to as inReplyTo",
-        "note_id as noteId",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-      ])
+      .select(COLUMNS)
       .where("guid", "=", guid)
       .where("is_deleted", "=", 0)
       .executeTakeFirst();
 
-    if (!row) {
-      return null;
-    }
-
-    return {
-      guid: row.guid,
-      authorUsername: row.authorUsername,
-      content: row.content,
-      inReplyTo: row.inReplyTo,
-      noteId: row.noteId ?? null,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt ?? null,
-    };
+    return row ? this.mapRow(row) : null;
   }
 
   async findByNoteId(noteId: string): Promise<PostRecord | null> {
     const row = await this.db
       .selectFrom("posts")
-      .select([
-        "guid",
-        "author_username as authorUsername",
-        "content",
-        "in_reply_to as inReplyTo",
-        "note_id as noteId",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-      ])
+      .select(COLUMNS)
       .where("note_id", "=", noteId)
       .where("is_deleted", "=", 0)
       .executeTakeFirst();
 
-    if (!row) {
-      return null;
-    }
+    return row ? this.mapRow(row) : null;
+  }
 
-    return {
-      guid: row.guid,
-      authorUsername: row.authorUsername,
-      content: row.content,
-      inReplyTo: row.inReplyTo,
-      noteId: row.noteId ?? null,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt ?? null,
-    };
+  async findByGuidAndAuthor(
+    guid: string,
+    authorUsername: string,
+  ): Promise<PostRecord | null> {
+    const row = await this.db
+      .selectFrom("posts")
+      .select(COLUMNS)
+      .where("guid", "=", guid)
+      .where("author_username", "=", authorUsername)
+      .where("is_deleted", "=", 0)
+      .executeTakeFirst();
+
+    return row ? this.mapRow(row) : null;
   }
 
   async findByAuthor(
@@ -123,15 +152,7 @@ export class PostRepository<
   ): Promise<PostRecord[]> {
     const rows = await this.db
       .selectFrom("posts")
-      .select([
-        "guid",
-        "author_username as authorUsername",
-        "content",
-        "in_reply_to as inReplyTo",
-        "note_id as noteId",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-      ])
+      .select(COLUMNS)
       .where("author_username", "=", authorUsername)
       .where("is_deleted", "=", 0)
       .where("in_reply_to", "is", null)
@@ -140,15 +161,7 @@ export class PostRepository<
       .offset(offset)
       .execute();
 
-    return rows.map((row) => ({
-      guid: row.guid,
-      authorUsername: row.authorUsername,
-      content: row.content,
-      inReplyTo: row.inReplyTo,
-      noteId: row.noteId ?? null,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt ?? null,
-    }));
+    return rows.map((r) => this.mapRow(r));
   }
 
   async findByAuthorIncludingReplies(
@@ -158,15 +171,7 @@ export class PostRepository<
   ): Promise<PostRecord[]> {
     const rows = await this.db
       .selectFrom("posts")
-      .select([
-        "guid",
-        "author_username as authorUsername",
-        "content",
-        "in_reply_to as inReplyTo",
-        "note_id as noteId",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-      ])
+      .select(COLUMNS)
       .where("author_username", "=", authorUsername)
       .where("is_deleted", "=", 0)
       .orderBy("created_at", "desc")
@@ -174,15 +179,7 @@ export class PostRepository<
       .offset(offset)
       .execute();
 
-    return rows.map((row) => ({
-      guid: row.guid,
-      authorUsername: row.authorUsername,
-      content: row.content,
-      inReplyTo: row.inReplyTo,
-      noteId: row.noteId ?? null,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt ?? null,
-    }));
+    return rows.map((r) => this.mapRow(r));
   }
 
   async findByInReplyTo(
@@ -190,84 +187,24 @@ export class PostRepository<
     limit = 20,
     offset = 0,
   ): Promise<PostRecord[]> {
-    const normalizedInReplyTo = this.normalizeNoteIdUrl(inReplyTo);
     const rows = await this.db
       .selectFrom("posts")
-      .select([
-        "guid",
-        "author_username as authorUsername",
-        "content",
-        "in_reply_to as inReplyTo",
-        "note_id as noteId",
-        "created_at as createdAt",
-        "updated_at as updatedAt",
-      ])
-      .where((eb) => {
-        const conditions = [
-          eb("in_reply_to", "=", normalizedInReplyTo),
-          eb("in_reply_to", "=", inReplyTo),
-        ];
-        if (
-          normalizedInReplyTo.startsWith("http://") &&
-          !normalizedInReplyTo.includes(":80")
-        ) {
-          const match = normalizedInReplyTo.match(/^http:\/\/([^\/]+)(\/.*)$/);
-          if (match) {
-            const [, host, path] = match;
-            const withPort = `http://${host}:80${path}`;
-            conditions.push(eb("in_reply_to", "=", withPort));
-          }
-        }
-        if (normalizedInReplyTo.includes(":80/")) {
-          const withoutPort = normalizedInReplyTo.replace(":80/", "/");
-          conditions.push(eb("in_reply_to", "=", withoutPort));
-        }
-        return eb.or(conditions);
-      })
+      .select(COLUMNS)
+      .where((eb) => this.inReplyToWhere(eb, inReplyTo))
       .where("is_deleted", "=", 0)
       .orderBy("created_at", "asc")
       .limit(limit)
       .offset(offset)
       .execute();
 
-    return rows.map((row) => ({
-      guid: row.guid,
-      authorUsername: row.authorUsername,
-      content: row.content,
-      inReplyTo: row.inReplyTo,
-      noteId: row.noteId ?? null,
-      createdAt: row.createdAt,
-      updatedAt: row.updatedAt ?? null,
-    }));
+    return rows.map((r) => this.mapRow(r));
   }
 
   async countByInReplyTo(inReplyTo: string): Promise<number> {
-    const normalizedInReplyTo = this.normalizeNoteIdUrl(inReplyTo);
     const result = await this.db
       .selectFrom("posts")
       .select(({ fn }) => [fn.count("guid").as("count")])
-      .where((eb) => {
-        const conditions = [
-          eb("in_reply_to", "=", normalizedInReplyTo),
-          eb("in_reply_to", "=", inReplyTo),
-        ];
-        if (
-          normalizedInReplyTo.startsWith("http://") &&
-          !normalizedInReplyTo.includes(":80")
-        ) {
-          const match = normalizedInReplyTo.match(/^http:\/\/([^\/]+)(\/.*)$/);
-          if (match) {
-            const [, host, path] = match;
-            const withPort = `http://${host}:80${path}`;
-            conditions.push(eb("in_reply_to", "=", withPort));
-          }
-        }
-        if (normalizedInReplyTo.includes(":80/")) {
-          const withoutPort = normalizedInReplyTo.replace(":80/", "/");
-          conditions.push(eb("in_reply_to", "=", withoutPort));
-        }
-        return eb.or(conditions);
-      })
+      .where((eb) => this.inReplyToWhere(eb, inReplyTo))
       .where("is_deleted", "=", 0)
       .executeTakeFirst();
 
@@ -302,63 +239,28 @@ export class PostRepository<
     authorUsername: string,
     updates: { content?: string },
   ): Promise<number> {
-    const updateData: {
-      updated_at: number;
-      content?: string;
-    } = {
-      updated_at: Math.floor(Date.now() / 1000),
-    };
-
-    if (updates.content !== undefined) {
-      updateData.content = updates.content;
-    }
-
-    const extractUsernameFromUrl = (url: string): string | null => {
-      const match = url.match(/\/u\/([^/]+)$/);
-      return match ? match[1] : null;
-    };
-
     const result = await this.db
       .updateTable("posts")
-      .set(updateData)
+      .set({
+        updated_at: Math.floor(Date.now() / 1000),
+        ...(updates.content !== undefined ? { content: updates.content } : {}),
+      })
       .where("guid", "=", guid)
       .where("is_deleted", "=", 0)
-      .where((eb) =>
-        eb.or([
-          eb("author_username", "=", authorUsername),
-          ...(extractUsernameFromUrl(authorUsername)
-            ? []
-            : [eb("author_username", "like", `%/u/${authorUsername}%`)]),
-        ]),
-      )
+      .where((eb) => this.authorWhere(eb, authorUsername))
       .executeTakeFirst();
 
     return Number(result.numUpdatedRows ?? 0);
   }
 
   async deleteByGuid(guid: string, authorUsername: string): Promise<number> {
-    const extractUsernameFromUrl = (url: string): string | null => {
-      const match = url.match(/\/u\/([^/]+)$/);
-      return match ? match[1] : null;
-    };
-
+    const now = Math.floor(Date.now() / 1000);
     const result = await this.db
       .updateTable("posts")
-      .set({
-        is_deleted: 1,
-        deleted_at: Math.floor(Date.now() / 1000),
-        updated_at: Math.floor(Date.now() / 1000),
-      })
+      .set({ is_deleted: 1, deleted_at: now, updated_at: now })
       .where("guid", "=", guid)
       .where("is_deleted", "=", 0)
-      .where((eb) =>
-        eb.or([
-          eb("author_username", "=", authorUsername),
-          ...(extractUsernameFromUrl(authorUsername)
-            ? []
-            : [eb("author_username", "like", `%/u/${authorUsername}%`)]),
-        ]),
-      )
+      .where((eb) => this.authorWhere(eb, authorUsername))
       .executeTakeFirst();
 
     return Number(result.numUpdatedRows ?? 0);
@@ -369,7 +271,7 @@ export class PostRepository<
     actorUrl: string,
     trx?: unknown,
   ): Promise<number> {
-    const db = (trx ?? this.db) as Kysely<{ posts: PostsTable }>;
+    const db = (trx ?? this.db) as Kysely<DB>;
     const result = await db
       .deleteFrom("posts")
       .where((eb) =>
@@ -383,5 +285,3 @@ export class PostRepository<
     return Number(result?.numDeletedRows ?? 0);
   }
 }
-
-

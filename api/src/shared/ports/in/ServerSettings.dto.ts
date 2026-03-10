@@ -13,4 +13,3 @@ export interface UpdateServerSettingsInput {
 }
 
 export type UpdateServerSettingsOutput = ServerSettings;
-

@@ -27,4 +27,3 @@ export class PasswordHasherService implements IPasswordHasher {
     return hash.toString("hex") === hashHex;
   }
 }
-

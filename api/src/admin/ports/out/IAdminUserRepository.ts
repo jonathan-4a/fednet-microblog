@@ -35,4 +35,3 @@ export interface IAdminUserRepository {
   updateUserStatus(username: string, isActive: 0 | 1): Promise<void>;
   deleteUser(username: string): Promise<number>;
 }
-

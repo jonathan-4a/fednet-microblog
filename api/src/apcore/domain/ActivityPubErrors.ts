@@ -2,9 +2,7 @@
 
 import { DomainError } from "@shared";
 
-/**
- * Thrown when a requested resource is invalid or malformed
- */
+// Thrown when a requested resource is invalid or malformed
 export class InvalidResourceError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_INVALID_RESOURCE";
 
@@ -13,9 +11,7 @@ export class InvalidResourceError extends DomainError {
   }
 }
 
-/**
- * Thrown when server configuration is missing or invalid
- */
+// Thrown when server configuration is missing or invalid
 export class ConfigurationError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_CONFIGURATION_ERROR";
 
@@ -24,9 +20,7 @@ export class ConfigurationError extends DomainError {
   }
 }
 
-/**
- * Thrown when an activity does not contain an actor
- */
+// Thrown when an activity does not contain an actor
 export class MissingActorError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_MISSING_ACTOR";
 
@@ -35,9 +29,7 @@ export class MissingActorError extends DomainError {
   }
 }
 
-/**
- * Thrown when an actor document does not expose an inbox
- */
+// Thrown when an actor document does not expose an inbox
 export class InboxNotFoundError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_INBOX_NOT_FOUND";
 
@@ -46,20 +38,21 @@ export class InboxNotFoundError extends DomainError {
   }
 }
 
-/**
- * Thrown when an upstream fetch fails
- */
+// Thrown when an upstream fetch fails.
+// remoteStatus and remoteBody are the raw response from the remote server (pass-through, no translation).
 export class FetchError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_FETCH_ERROR";
+  readonly remoteStatus?: number;
+  readonly remoteBody?: string;
 
-  constructor(message: string) {
+  constructor(message: string, remoteStatus?: number, remoteBody?: string) {
     super(message);
+    this.remoteStatus = remoteStatus;
+    this.remoteBody = remoteBody;
   }
 }
 
-/**
- * Thrown when an actor URL is invalid
- */
+// Thrown when an actor URL is invalid
 export class InvalidActorUrlError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_INVALID_ACTOR_URL";
 
@@ -68,9 +61,7 @@ export class InvalidActorUrlError extends DomainError {
   }
 }
 
-/**
- * Thrown when a resource cannot be found in ActivityPub operations
- */
+// Thrown when a resource cannot be found in ActivityPub operations
 export class NotFoundError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_NOT_FOUND";
 
@@ -79,9 +70,7 @@ export class NotFoundError extends DomainError {
   }
 }
 
-/**
- * Thrown when validation fails in ActivityPub operations
- */
+// Thrown when validation fails in ActivityPub operations
 export class ValidationError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_VALIDATION_ERROR";
 
@@ -90,9 +79,7 @@ export class ValidationError extends DomainError {
   }
 }
 
-/**
- * Thrown when an internal server error occurs in ActivityPub operations
- */
+// Thrown when an internal server error occurs in ActivityPub operations
 export class InternalServerError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_INTERNAL_SERVER_ERROR";
 
@@ -101,9 +88,7 @@ export class InternalServerError extends DomainError {
   }
 }
 
-/**
- * Thrown when authentication fails in ActivityPub operations
- */
+// Thrown when authentication fails in ActivityPub operations
 export class AuthenticationError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_AUTHENTICATION_ERROR";
 
@@ -112,9 +97,7 @@ export class AuthenticationError extends DomainError {
   }
 }
 
-/**
- * Thrown when authorization fails in ActivityPub operations
- */
+// Thrown when authorization fails in ActivityPub operations
 export class AuthorizationError extends DomainError {
   readonly errorCode = "ACTIVITYPUB_AUTHORIZATION_ERROR";
 
@@ -122,4 +105,3 @@ export class AuthorizationError extends DomainError {
     super(message);
   }
 }
-

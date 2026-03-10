@@ -1,7 +1,7 @@
 {
   "name": "microblog-api",
   "version": "0.0.1",
-  "description": "FedNet Microblog API",
+  "description": "Federated Microblog API",
   "author": "Jonathan Ayalew",
   "private": true,
   "license": "UNLICENSED",
@@ -44,4 +44,3 @@
     "typescript-eslint": "^8.20.0"
   }
 }
-

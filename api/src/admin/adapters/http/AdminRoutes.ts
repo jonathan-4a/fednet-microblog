@@ -38,6 +38,8 @@ export function createAdminRoutes(
   listInviteTokens: IListInviteTokens,
   revokeInviteToken: IRevokeInviteToken,
   adminGuard: AdminGuard,
+  domain: string,
+  port: string,
 ) {
   const app = new Hono();
   const controller = new AdminController(
@@ -55,6 +57,8 @@ export function createAdminRoutes(
     updateSettings,
     listInviteTokens,
     revokeInviteToken,
+    domain,
+    port,
   );
 
   // Apply admin guard to all routes
@@ -76,7 +80,7 @@ export function createAdminRoutes(
   app.delete(AdminURLs.post, (c) => controller.deletePost(c));
 
   // Settings
-  app.get(AdminURLs.settings, (c) => controller.getSettings(c));
+  app.get(AdminURLs.settings, () => controller.getSettings());
   app.patch(AdminURLs.settings, (c) => controller.updateSettings(c));
 
   // Invites
@@ -85,4 +89,3 @@ export function createAdminRoutes(
 
   return app;
 }
-

@@ -37,4 +37,3 @@ export class AdminInternalServerError extends DomainError {
     super(message);
   }
 }
-

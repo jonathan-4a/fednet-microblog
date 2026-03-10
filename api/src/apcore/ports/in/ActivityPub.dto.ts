@@ -84,10 +84,6 @@ export interface GetRemoteResourceInput {
   raw?: boolean;
 }
 
-export interface GetRemoteWebFingerInput {
-  resource: string;
-}
-
 export interface GetOutboxInput {
   username: string;
   host: string;
@@ -112,4 +108,3 @@ export interface DispatchS2SActivityEventInput {
   username: string;
   activity: Record<string, unknown>;
 }
-

@@ -53,4 +53,3 @@ export class GetAdminUser implements IGetAdminUser {
     };
   }
 }
-

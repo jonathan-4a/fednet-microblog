@@ -23,10 +23,15 @@ export { AdminPostRepository } from "./adapters/db/AdminPostRepository";
 
 // Export adapters
 export { AdminGuard } from "./adapters/http/AdminGuard";
-export { AdminBootstrap } from "./adapters/AdminBootstrap";
+export {
+  AdminBootstrap,
+  type AdminBootstrapConfig,
+} from "./adapters/AdminBootstrap";
 
 // Export factory functions from di.ts
 export {
+  createAdminUserRepository,
+  createAdminPostRepository,
   createGetAdminDashboard,
   createListAdminUsers,
   createGetAdminUser,
@@ -47,4 +52,3 @@ export {
   createAdminBootstrap,
   initializeAdmin,
 } from "./admin.di";
-

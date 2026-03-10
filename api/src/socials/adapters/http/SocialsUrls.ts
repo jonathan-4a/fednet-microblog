@@ -5,4 +5,3 @@ export const SocialsUrls = {
   userFollowing: "/u/:username/following",
   userLiked: "/u/:username/liked",
 };
-

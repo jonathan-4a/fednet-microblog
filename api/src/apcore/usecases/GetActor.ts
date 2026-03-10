@@ -43,4 +43,3 @@ export class GetActor implements IGetActor {
     );
   }
 }
-

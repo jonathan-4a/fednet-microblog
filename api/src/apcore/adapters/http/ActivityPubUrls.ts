@@ -7,4 +7,3 @@ export const ActivityPubUrls = {
   inbox: "/u/:username/inbox",
   sharedInbox: "/inbox",
 };
-

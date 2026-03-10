@@ -50,12 +50,21 @@ export class GetRemoteResource implements IGetRemoteResource {
         "User-Agent": "ActivityPub-Server/1.0",
       };
 
-      // REST API endpoints (like /api/v1/) don't accept HTTP signatures
-      // Only sign ActivityPub protocol endpoints
       const isRestApiEndpoint = parsedUrl.pathname.startsWith("/api/v1/");
 
-      // Add HTTP signature if username is provided and it's not a REST API endpoint
-      if (signAsUsername && !isRestApiEndpoint) {
+      const domain = process.env.DOMAIN ?? "localhost";
+      const port = process.env.PORT ?? "3000";
+      const ourHost =
+        port === "80" || port === "443" ? domain : `${domain}:${port}`;
+      const isLocalhost = domain === "localhost" || domain === "127.0.0.1";
+      const isRemoteTarget =
+        parsedUrl.host !== ourHost && parsedUrl.host !== domain;
+      const skipSignForRemote = isLocalhost && isRemoteTarget;
+
+      const shouldSign =
+        signAsUsername && !isRestApiEndpoint && !skipSignForRemote;
+
+      if (shouldSign) {
         const signedHeaders = await this.httpSignatureService.signRequest({
           method: "GET",
           url,
@@ -70,7 +79,11 @@ export class GetRemoteResource implements IGetRemoteResource {
         this.logger.debug(
           `[GetRemoteResource] Skipping HTTP signature for REST API endpoint: ${url}`,
         );
-      } else {
+      } else if (skipSignForRemote) {
+        this.logger.debug(
+          `[GetRemoteResource] Skipping signature for remote fetch (localhost keyId unreachable by ${parsedUrl.host})`,
+        );
+      } else if (!signAsUsername) {
         this.logger.warn(
           `[GetRemoteResource] No username provided, request will be unsigned`,
         );
@@ -95,11 +108,13 @@ export class GetRemoteResource implements IGetRemoteResource {
         const body = await response.arrayBuffer();
         const contentType =
           response.headers.get("content-type") ?? "application/octet-stream";
+        const link = response.headers.get("Link") ?? undefined;
         return {
           status: response.status,
           statusText: response.statusText,
           contentType,
           body,
+          link,
         };
       }
 
@@ -136,7 +151,6 @@ export class GetRemoteResource implements IGetRemoteResource {
         );
       }
 
-      // Check Content-Type before parsing JSON
       const contentType = response.headers.get("content-type") || "";
       if (
         !contentType.includes("application/json") &&
@@ -153,7 +167,7 @@ export class GetRemoteResource implements IGetRemoteResource {
 
       let data: Record<string, unknown>;
       try {
-        data = await response.json();
+        data = (await response.json()) as Record<string, unknown>;
       } catch (jsonError) {
         const responseText = await response.text().catch(() => "");
         this.logger.error(
@@ -201,4 +215,3 @@ export class GetRemoteResource implements IGetRemoteResource {
     }
   }
 }
-

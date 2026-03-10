@@ -1,16 +1,24 @@
 // src/apcore/handlers/HandleC2SCreateActivity.ts
 
 import type { ICreatePost } from "@posts";
+import type { IFederationDelivery } from "../ports/out/IFederationDelivery";
 import type { C2SActivitySubmittedEvent } from "../domain/events/C2SActivitySubmittedEvent";
+import { getInReplyToAuthorActor } from "../utils/inReplyToActor";
 
 export class HandleC2SCreateActivity {
-  constructor(private readonly createPost: ICreatePost) {}
+  constructor(
+    private readonly createPost: ICreatePost,
+    private readonly federationDelivery: IFederationDelivery,
+    private readonly ourOrigin: string,
+  ) {}
 
   async handle(event: C2SActivitySubmittedEvent): Promise<void> {
     const { username, activity, host, protocol } = event.payload;
 
     const activityType =
-      typeof activity.type === "string" ? activity.type : String(activity?.type);
+      typeof activity.type === "string"
+        ? activity.type
+        : String(activity?.type);
     if (activityType !== "Create") {
       return;
     }
@@ -28,8 +36,12 @@ export class HandleC2SCreateActivity {
     }
 
     const content =
-      typeof note.content === "string" ? note.content : String(note?.content ?? "");
-    const trimmedContent = content.trim();
+      typeof note.content === "string"
+        ? note.content
+        : typeof note.content === "object"
+          ? JSON.stringify(note.content)
+          : null;
+    const trimmedContent = content?.trim();
     if (!trimmedContent) {
       return;
     }
@@ -44,6 +56,14 @@ export class HandleC2SCreateActivity {
         ? activity.actor
         : `${protocol}://${host}/u/${username}`;
 
+    const inReplyToAuthorActor = getInReplyToAuthorActor(activity);
+    const isRemoteReply =
+      inReplyToAuthorActor !== null &&
+      !inReplyToAuthorActor.startsWith(this.ourOrigin);
+    if (inReplyToAuthorActor && isRemoteReply) {
+      await this.federationDelivery.sendToInbox(inReplyToAuthorActor, activity);
+    }
+
     await this.createPost.execute({
       username,
       content: trimmedContent,
@@ -54,4 +74,3 @@ export class HandleC2SCreateActivity {
     });
   }
 }
-

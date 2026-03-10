@@ -1,8 +1,8 @@
 {
   "openapi": "3.0.0",
   "info": {
-    "title": "FedNet Microblog API",
-    "description": "A simple ActivityPub server for social media: users, follows, federation, and basic admin.",
+    "title": "Federated Microblog API",
+    "description": "A simple ActivityPub server for social media.",
     "version": "1.0.0",
     "license": {
       "name": "MIT",
@@ -39,6 +39,10 @@
     {
       "name": "Posts",
       "description": "ActivityPub endpoints for posts and post interactions (replies, likes, shares)"
+    },
+    {
+      "name": "Notifications",
+      "description": "User notifications (follows, likes, replies, reposts) and read state"
     }
   ],
   "paths": {
@@ -2096,6 +2100,230 @@
           }
         }
       }
+    },
+    "/api/notifications": {
+      "get": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "List notifications",
+        "description": "Returns the authenticated user's notifications (follows, likes, replies, reposts) with pagination and unread count.",
+        "operationId": "listNotifications",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "limit",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 50,
+              "default": 20
+            },
+            "description": "Maximum number of notifications to return"
+          },
+          {
+            "name": "offset",
+            "in": "query",
+            "required": false,
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 0
+            },
+            "description": "Number of notifications to skip (pagination)"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notifications list and unread count",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NotificationsListResponse"
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/read": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark all notifications as read",
+        "description": "Marks all notifications for the authenticated user as read. Returns the number of notifications marked.",
+        "operationId": "markAllNotificationsRead",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Number of notifications marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "required": [
+                    "marked"
+                  ],
+                  "properties": {
+                    "marked": {
+                      "type": "integer",
+                      "description": "Count of notifications marked as read"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/api/notifications/{id}/read": {
+      "patch": {
+        "tags": [
+          "Notifications"
+        ],
+        "summary": "Mark a notification as read",
+        "description": "Marks a single notification as read by ID. The notification must belong to the authenticated user.",
+        "operationId": "markNotificationRead",
+        "security": [
+          {
+            "bearerAuth": []
+          }
+        ],
+        "parameters": [
+          {
+            "name": "id",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "integer"
+            },
+            "description": "Notification ID"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Notification marked as read",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "ok": {
+                      "type": "boolean",
+                      "example": true
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid notification id",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Invalid notification id"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Missing or invalid token",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Notification not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "message": {
+                      "type": "string",
+                      "example": "Notification not found"
+                    }
+                  }
+                }
+              }
+            }
+          },
+          "500": {
+            "description": "Unexpected server error",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/Error"
+                }
+              }
+            }
+          }
+        }
+      }
     }
   },
   "components": {
@@ -2567,6 +2795,79 @@
             }
           }
         }
+      },
+      "NotificationsListResponse": {
+        "type": "object",
+        "required": [
+          "notifications",
+          "unreadCount"
+        ],
+        "properties": {
+          "notifications": {
+            "type": "array",
+            "items": {
+              "$ref": "#/components/schemas/NotificationItem"
+            }
+          },
+          "unreadCount": {
+            "type": "integer",
+            "description": "Total number of unread notifications for the user"
+          }
+        }
+      },
+      "NotificationItem": {
+        "type": "object",
+        "properties": {
+          "id": {
+            "type": "integer",
+            "description": "Notification ID"
+          },
+          "recipientActor": {
+            "type": "string",
+            "format": "uri",
+            "description": "Actor URL of the recipient"
+          },
+          "actor": {
+            "type": "string",
+            "format": "uri",
+            "description": "Actor URL of the user who triggered the notification"
+          },
+          "type": {
+            "type": "string",
+            "enum": [
+              "follow",
+              "like",
+              "reply",
+              "repost"
+            ],
+            "description": "Kind of notification"
+          },
+          "objectId": {
+            "type": "string",
+            "nullable": true,
+            "description": "ID or URL of the related object (e.g. post for like/reply/repost)"
+          },
+          "readAt": {
+            "type": "integer",
+            "format": "int64",
+            "nullable": true,
+            "description": "Unix timestamp when marked read, or null if unread"
+          },
+          "createdAt": {
+            "type": "integer",
+            "format": "int64",
+            "description": "Unix timestamp when the notification was created"
+          }
+        },
+        "required": [
+          "id",
+          "recipientActor",
+          "actor",
+          "type",
+          "objectId",
+          "readAt",
+          "createdAt"
+        ]
       },
       "WebFingerResponse": {
         "type": "object",
