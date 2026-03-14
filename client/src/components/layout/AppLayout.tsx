@@ -1,19 +1,18 @@
-// src/components/layout/TwitterLayout.tsx
 import type { ReactNode } from 'react'
 import { Box, useMediaQuery, useTheme } from '@mui/material'
 import { LeftSidebar } from './LeftSidebar'
 import { RightSidebar } from './RightSidebar'
 import { MobileBottomNav } from './MobileBottomNav'
 
-interface TwitterLayoutProps {
+interface AppLayoutProps {
   children: ReactNode
 }
 
-export function TwitterLayout({ children }: TwitterLayoutProps) {
+export function AppLayout({ children }: AppLayoutProps) {
   const theme = useTheme()
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm')) // < 600px
-  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg')) // 600px - 1200px
-  const isDesktop = useMediaQuery(theme.breakpoints.up('lg')) // >= 1200px
+  const isMobile = useMediaQuery(theme.breakpoints.down('sm'))
+  const isTablet = useMediaQuery(theme.breakpoints.between('sm', 'lg'))
+  const isDesktop = useMediaQuery(theme.breakpoints.up('lg'))
 
   return (
     <Box
@@ -25,7 +24,6 @@ export function TwitterLayout({ children }: TwitterLayoutProps) {
         position: 'relative',
       }}
     >
-      {/* Left Sidebar - Hidden on mobile */}
       {!isMobile && (
         <Box
           sx={{
@@ -44,10 +42,8 @@ export function TwitterLayout({ children }: TwitterLayoutProps) {
         </Box>
       )}
 
-      {/* Spacer for fixed sidebar on tablet */}
       {isTablet && !isMobile && <Box sx={{ width: 240, flexShrink: 0 }} />}
 
-      {/* Center Content */}
       <Box
         sx={{
           flex: 1,
@@ -66,7 +62,6 @@ export function TwitterLayout({ children }: TwitterLayoutProps) {
         {children}
       </Box>
 
-      {/* Right Sidebar - Only on desktop */}
       {isDesktop && (
         <Box
           sx={{
@@ -82,12 +77,8 @@ export function TwitterLayout({ children }: TwitterLayoutProps) {
         </Box>
       )}
 
-      {/* Mobile Bottom Navigation - Only on mobile */}
       {isMobile && <MobileBottomNav />}
-
-      {/* Spacer for mobile bottom nav */}
       {isMobile && <Box sx={{ height: 56 }} />}
     </Box>
   )
 }
-

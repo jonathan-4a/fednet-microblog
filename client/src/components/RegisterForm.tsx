@@ -364,7 +364,7 @@ export function RegisterForm() {
             <Link
               to='/login'
               style={{
-                color: COLORS.twitterBlue,
+                color: COLORS.primary,
                 textDecoration: 'none',
                 fontWeight: 600,
               }}

@@ -6,7 +6,7 @@ import IconButton from '@mui/material/IconButton'
 import { useInView } from 'react-intersection-observer'
 import { useEffect } from 'react'
 import { API_BASE } from '../config'
-import { TwitterLayout } from '../components/layout/TwitterLayout'
+import { AppLayout } from '../components/layout/AppLayout'
 import { PostCard } from '../components/post/PostCard'
 import { ReplyThread } from '../components/post/ReplyThread'
 import { ReplyDialog } from '../components/ReplyDialog'
@@ -63,11 +63,11 @@ export function PostDetailPage() {
 
   if (!postUrl) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <Box sx={{ px: 3, py: 4 }}>
           <ErrorDisplay message='Invalid post URL' />
         </Box>
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
@@ -156,21 +156,21 @@ export function PostDetailPage() {
 
   if (postLoading) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <LoadingSpinner />
         </Box>
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
   if (isDeleting) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <Box sx={{ display: 'flex', justifyContent: 'center', py: 4 }}>
           <LoadingSpinner />
         </Box>
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
@@ -178,7 +178,7 @@ export function PostDetailPage() {
   // The specific error is already shown via snackbar.
   if (!post && !isDeleting) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <Box>
           <Box
             sx={{
@@ -215,7 +215,7 @@ export function PostDetailPage() {
 
           <EmptyState message='Post is unavailable on this instance.' />
         </Box>
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
@@ -224,7 +224,7 @@ export function PostDetailPage() {
     profile?.name || profile?.preferredUsername || post?.author_username || ''
 
   return (
-    <TwitterLayout>
+    <AppLayout>
       <Box>
         <Box
           sx={{
@@ -404,7 +404,7 @@ export function PostDetailPage() {
         )}
 
       </Box>
-    </TwitterLayout>
+    </AppLayout>
   )
 }
 

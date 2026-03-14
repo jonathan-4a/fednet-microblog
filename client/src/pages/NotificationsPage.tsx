@@ -1,7 +1,7 @@
 // src/pages/NotificationsPage.tsx
 import { Box, Typography, Button, Link } from '@mui/material'
 import { useNavigate } from 'react-router-dom'
-import { TwitterLayout } from '../components/layout/TwitterLayout'
+import { AppLayout } from '../components/layout/AppLayout'
 import { RGBA_COLORS, COLORS } from '../constants/theme'
 import { useNotificationsQuery } from '../hooks/queries/useNotificationsQuery'
 import { useActorsForNotifications } from '../hooks/queries/useActorsForNotifications'
@@ -59,7 +59,7 @@ export function NotificationsPage() {
   }
 
   return (
-    <TwitterLayout>
+    <AppLayout>
       <Box>
         <Box
           sx={{
@@ -97,7 +97,7 @@ export function NotificationsPage() {
                 textTransform: 'none',
                 fontWeight: 600,
                 fontSize: 14,
-                color: COLORS.twitterBlue,
+                color: COLORS.primary,
               }}
             >
               Mark all read
@@ -159,7 +159,7 @@ export function NotificationsPage() {
                         variant='inherit'
                         onClick={(e) => handleActorClick(e, n)}
                         sx={{
-                          color: COLORS.twitterBlue,
+                          color: COLORS.primary,
                           fontWeight: 700,
                           textDecoration: 'none',
                           '&:hover': { textDecoration: 'underline' },
@@ -191,6 +191,6 @@ export function NotificationsPage() {
           )}
         </Box>
       </Box>
-    </TwitterLayout>
+    </AppLayout>
   )
 }

@@ -146,7 +146,7 @@ export function LeftSidebar({ isCompact = false, showSearchInSidebar = false }: 
               : location.pathname.startsWith(item.path))
           const icon =
             'showBadge' in item && item.showBadge && notificationUnreadCount > 0 ? (
-              <Badge badgeContent={notificationUnreadCount} sx={{ '& .MuiBadge-badge': { backgroundColor: COLORS.twitterRed, color: COLORS.white } }}>
+              <Badge badgeContent={notificationUnreadCount} sx={{ '& .MuiBadge-badge': { backgroundColor: COLORS.danger, color: COLORS.white } }}>
                 {item.icon}
               </Badge>
             ) : (

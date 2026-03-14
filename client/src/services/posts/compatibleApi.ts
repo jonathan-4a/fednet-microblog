@@ -1,9 +1,7 @@
-// src/services/posts/mastodonApi.ts
-// Mastodon API for Akkoma/Pleroma/Mastodon (works without HTTP signatures)
 import type { Post } from '../../types/posts'
 import { fetchResource, fetchResourceWithHeaders, parseLinkNext, isRemoteUrl } from '../proxy'
 
-interface MastodonAccount {
+interface RemoteAccount {
   id: string
   username: string
   display_name?: string
@@ -13,23 +11,21 @@ interface MastodonAccount {
   fqn?: string
 }
 
-interface MastodonStatus {
+interface RemoteStatus {
   id: string
   uri?: string
   url?: string
   content?: string
   created_at: string
   in_reply_to_id?: string | null
-  reblog?: MastodonStatus | null
-  account: MastodonAccount
-  /** Mastodon uses favourites_count (British), some use favorites_count */
+  reblog?: RemoteStatus | null
+  account: RemoteAccount
   favourites_count?: number
   favorites_count?: number
   reblogs_count?: number
   replies_count?: number
 }
 
-/** Extract origin and username from outbox URL (e.g. https://yourwalls.today/users/bl00d/outbox) */
 function parseOutboxUrl(outboxUrl: string): { origin: string; username: string } | null {
   try {
     const url = new URL(outboxUrl)
@@ -44,9 +40,8 @@ function parseOutboxUrl(outboxUrl: string): { origin: string; username: string }
   }
 }
 
-/** Transform Mastodon/Akkoma status to our Post format */
-function mastodonStatusToPost(
-  status: MastodonStatus,
+function compatibleStatusToPost(
+  status: RemoteStatus,
   authorUsername: string,
   likedPostIds: Set<string>
 ): Post {
@@ -86,19 +81,17 @@ function mastodonStatusToPost(
   return post
 }
 
-/** Fetch posts via Mastodon API (works for Akkoma/Pleroma/Mastodon without HTTP signatures) */
-export async function getPostsViaMastodonApi(
+export async function getPostsViaCompatibleApi(
   outboxUrl: string,
   params: {
     limit?: number
     currentUsername?: string
     likedPostIds?: Set<string>
-    /** When true, fetch only replies (exclude_replies=false) */
     repliesOnly?: boolean
   }
 ): Promise<{ posts: Post[]; replies: Post[]; totalItems?: number; next?: string | null }> {
   const parsed = parseOutboxUrl(outboxUrl)
-  if (!parsed) throw new Error('Invalid outbox URL for Mastodon API fallback')
+  if (!parsed) throw new Error('Invalid outbox URL for compatible API fallback')
 
   const { origin, username } = parsed
   let hostname: string
@@ -112,14 +105,14 @@ export async function getPostsViaMastodonApi(
   const likedPostIds = params.likedPostIds ?? new Set<string>()
 
   const lookupUrl = `${origin}/api/v1/accounts/lookup?acct=${encodeURIComponent(acct)}`
-  const account = await fetchResource<MastodonAccount>(lookupUrl, {
+  const account = await fetchResource<RemoteAccount>(lookupUrl, {
     acceptHeader: 'application/json',
   })
   if (!account?.id) throw new Error('Account not found')
 
   const limit = params.limit ?? 20
   const statusesUrl = `${origin}/api/v1/accounts/${account.id}/statuses?limit=${limit}&exclude_reblogs=true${params.repliesOnly ? '&exclude_replies=false' : '&exclude_replies=true'}`
-  const { data: statuses, headers } = await fetchResourceWithHeaders<MastodonStatus[]>(statusesUrl, {
+  const { data: statuses, headers } = await fetchResourceWithHeaders<RemoteStatus[]>(statusesUrl, {
     acceptHeader: 'application/json',
   })
   const nextUrl = parseLinkNext(headers.get('Link'))
@@ -131,7 +124,7 @@ export async function getPostsViaMastodonApi(
   const replies: Post[] = []
 
   for (const status of statuses) {
-    const post = mastodonStatusToPost(status, authorHandle, likedPostIds)
+    const post = compatibleStatusToPost(status, authorHandle, likedPostIds)
     if (params.repliesOnly) {
       if (status.in_reply_to_id) replies.push(post)
     } else {
@@ -151,7 +144,6 @@ export async function getPostsViaMastodonApi(
   }
 }
 
-/** Extract account id from Mastodon statuses URL */
 function getAccountIdFromStatusesUrl(statusesUrl: string): string | null {
   try {
     const m = statusesUrl.match(/\/api\/v1\/accounts\/([^/]+)\/statuses/)
@@ -161,8 +153,7 @@ function getAccountIdFromStatusesUrl(statusesUrl: string): string | null {
   }
 }
 
-/** Fetch a paginated Mastodon statuses page by URL (from Link header) */
-export async function getPostsViaMastodonApiPage(
+export async function getPostsViaCompatibleApiPage(
   statusesUrl: string,
   params: {
     currentUsername?: string
@@ -172,11 +163,11 @@ export async function getPostsViaMastodonApiPage(
   const likedPostIds = params.likedPostIds ?? new Set<string>()
 
   const accountId = getAccountIdFromStatusesUrl(statusesUrl)
-  if (!accountId) throw new Error('Invalid Mastodon statuses URL')
+  if (!accountId) throw new Error('Invalid statuses URL')
 
   const url = new URL(statusesUrl)
   const origin = `${url.protocol}//${url.host}`
-  const account = await fetchResource<MastodonAccount>(
+  const account = await fetchResource<RemoteAccount>(
     `${origin}/api/v1/accounts/${accountId}`,
     { acceptHeader: 'application/json' }
   )
@@ -184,7 +175,7 @@ export async function getPostsViaMastodonApiPage(
 
   const hostname = url.hostname
 
-  const { data: statuses, headers } = await fetchResourceWithHeaders<MastodonStatus[]>(statusesUrl, {
+  const { data: statuses, headers } = await fetchResourceWithHeaders<RemoteStatus[]>(statusesUrl, {
     acceptHeader: 'application/json',
   })
   const nextUrl = parseLinkNext(headers.get('Link'))
@@ -194,15 +185,14 @@ export async function getPostsViaMastodonApiPage(
   const posts: Post[] = []
   const replies: Post[] = []
   for (const status of statuses) {
-    const post = mastodonStatusToPost(status, authorHandle, likedPostIds)
+    const post = compatibleStatusToPost(status, authorHandle, likedPostIds)
     if (status.in_reply_to_id) replies.push(post)
     else posts.push(post)
   }
   return { posts, replies, totalItems: account.statuses_count, next: nextUrl }
 }
 
-/** True if URL is a Mastodon API statuses pagination URL */
-export function isMastodonStatusesUrl(url: string): boolean {
+export function isCompatibleStatusesUrl(url: string): boolean {
   try {
     const u = new URL(url)
     return u.pathname.includes('/api/v1/accounts/') && u.pathname.includes('/statuses')
@@ -211,8 +201,7 @@ export function isMastodonStatusesUrl(url: string): boolean {
   }
 }
 
-/** Check if URL is a Mastodon-compatible outbox (users/:username/outbox) */
-export function isMastodonCompatibleOutbox(url: string): boolean {
+export function isCompatibleOutbox(url: string): boolean {
   try {
     const parsed = parseOutboxUrl(url)
     return parsed !== null && isRemoteUrl(url)

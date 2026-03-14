@@ -124,8 +124,8 @@ export function InvitesTable({ invites, onRevoke }: InvitesTableProps) {
                         size='small'
                         onClick={() => onRevoke(invite.token)}
                         sx={{
-                          color: COLORS.twitterRed,
-                          borderColor: COLORS.twitterRed,
+                          color: COLORS.danger,
+                          borderColor: COLORS.danger,
                           textTransform: 'none',
                           fontSize: 13,
                           fontWeight: 600,
@@ -135,7 +135,7 @@ export function InvitesTable({ invites, onRevoke }: InvitesTableProps) {
                           minWidth: 56,
                           boxShadow: 'none',
                           '&:hover': {
-                            borderColor: COLORS.twitterRed,
+                            borderColor: COLORS.danger,
                             backgroundColor: RGBA_COLORS.redMedium,
                             boxShadow: 'none',
                           },

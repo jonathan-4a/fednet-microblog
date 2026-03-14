@@ -18,7 +18,6 @@ async function fetchCollection(url: string): Promise<OrderedCollection & { _coll
   const hasItems = (data.orderedItems?.length ?? 0) > 0
   const hasFirst = !!data.first
 
-  // No "first" link but we have a count — try Mastodon-style first page (?page=1) so we actually request the list (and get 403 if forbidden)
   if (totalItems > 0 && !hasItems && !hasFirst) {
     const firstPageUrl = url.includes('?') ? `${url}&page=1` : `${url}?page=1`
     try {
@@ -51,23 +50,15 @@ async function fetchCollection(url: string): Promise<OrderedCollection & { _coll
     return data
   }
 
-  // If orderedItems is missing/empty but there is a first page, fetch it
   if ((!data.orderedItems || data.orderedItems.length === 0) && data.first) {
     let firstPageUrl: string | undefined
 
     if (typeof data.first === 'string') {
       firstPageUrl = data.first
     } else if (typeof data.first === 'object' && 'id' in data.first) {
-      // If it's an object, it might already have items?
-      // Type definition says OrderedCollectionPage has orderedItems.
-      // But if it's a Link object or partial?
-      // If our API returns the full Page object inline as `first`, then `data.first.orderedItems` exists.
-      // But our updated API implementation returns `Collection` where `first` can be string (link).
-      // Standard ActivityPub often links `first` as a URL string.
       const page = data.first as OrderedCollectionPage
       if (page.orderedItems && page.orderedItems.length > 0) {
         data.orderedItems = page.orderedItems
-        // Preserve next page info if available
         if (page.next) {
           ;(data as OrderedCollection & { next?: string }).next = page.next
         }

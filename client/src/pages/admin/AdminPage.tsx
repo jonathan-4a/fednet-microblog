@@ -4,7 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom'
 import { Box, Typography } from '@mui/material'
 import { LoadingFallback } from '../../components/LoadingFallback'
 import { TabPanel } from '../../components/profile/TabPanel'
-import { TwitterLayout } from '../../components/layout/TwitterLayout'
+import { AppLayout } from '../../components/layout/AppLayout'
 import { RGBA_COLORS } from '../../constants/theme'
 
 const DashboardPage = lazy(() =>
@@ -43,7 +43,7 @@ export function AdminPage() {
   }, [location.pathname])
 
   return (
-    <TwitterLayout>
+    <AppLayout>
       <Box>
         {/* Sticky bar: title + tabs (logout is in left sidebar) */}
         <Box
@@ -158,7 +158,7 @@ export function AdminPage() {
           </TabPanel>
         </Box>
       </Box>
-    </TwitterLayout>
+    </AppLayout>
   )
 }
 

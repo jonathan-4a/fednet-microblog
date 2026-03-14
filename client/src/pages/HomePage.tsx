@@ -1,10 +1,37 @@
 // src/pages/HomePage.tsx
 import { Box, Typography } from '@mui/material'
-import { TwitterLayout } from '../components/layout/TwitterLayout'
+import { AppLayout } from '../components/layout/AppLayout'
+import { useAuthStore } from '../stores/authStore'
+import { PostList } from '../components/post/PostList'
+import { useHomeFeedQuery } from '../hooks/queries/useHomeFeedQuery'
+import { usePostInteractions } from '../hooks/usePostInteractions'
 
 export function HomePage() {
+  const { user } = useAuthStore()
+  const username = user?.username
+
+  const { handleLike } = usePostInteractions(username)
+
+  const {
+    data,
+    isLoading,
+    error,
+    hasNextPage,
+    fetchNextPage,
+    isFetchingNextPage,
+  } = useHomeFeedQuery(username, {
+    maxDepth: 4,
+    maxUsers: 50,
+    postsPerUserLimit: 20,
+    maxPosts: 200,
+    includeSelf: false,
+    edgeDirection: 'both',
+  })
+
+  const feedItems = data?.pages.flatMap((page) => page.items) ?? []
+
   return (
-    <TwitterLayout>
+    <AppLayout>
       <Box
         sx={{
           borderBottom: '1px solid rgba(0,0,0,0.08)',
@@ -19,12 +46,24 @@ export function HomePage() {
         <Typography sx={{ fontSize: 20, fontWeight: 700 }}>Home</Typography>
       </Box>
 
-      <Box sx={{ p: 3 }}>
-        <Typography color='text.secondary'>
-          Your feed will appear here
-        </Typography>
+      <Box sx={{ p: 0 }}>
+        <PostList
+          posts={feedItems}
+          loading={isLoading || !username}
+          error={
+            !username
+              ? 'You must be logged in to see your home feed.'
+              : error
+              ? error.message
+              : null
+          }
+          onLike={handleLike}
+          hasNextPage={hasNextPage}
+          fetchNextPage={hasNextPage ? fetchNextPage : undefined}
+          isFetchingNextPage={isFetchingNextPage}
+        />
       </Box>
-    </TwitterLayout>
+    </AppLayout>
   )
 }
 

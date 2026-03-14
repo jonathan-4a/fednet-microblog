@@ -299,7 +299,7 @@ export function LoginForm() {
             <Link
               to='/register'
               style={{
-                color: COLORS.twitterBlue,
+                color: COLORS.primary,
                 textDecoration: 'none',
                 fontWeight: 600,
               }}

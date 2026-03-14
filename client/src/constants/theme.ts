@@ -9,8 +9,8 @@ export const BORDER_RADIUS = {
 
 export const COLORS = {
   white: '#fff',
-  twitterBlue: '#83AB2E',
-  twitterRed: '#E04E2E',
+  primary: '#83AB2E',
+  danger: '#E04E2E',
   textPrimary: '#0f1419',
   textSecondary: '#536471',
 } as const;

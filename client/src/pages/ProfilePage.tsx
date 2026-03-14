@@ -25,7 +25,7 @@ import { useProfileDataQuery } from '../hooks/useProfileDataQuery'
 
 import { useSnackbar } from '../hooks/useSnackbar'
 import { usePostInteractions } from '../hooks/usePostInteractions'
-import { TwitterLayout } from '../components/layout/TwitterLayout'
+import { AppLayout } from '../components/layout/AppLayout'
 import type { Post } from '../types/posts'
 
 export function ProfilePage() {
@@ -114,22 +114,22 @@ export function ProfilePage() {
 
   if (profileLoading) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <LoadingSpinner />
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
   if (profileError || !profile) {
     return (
-      <TwitterLayout>
+      <AppLayout>
         <ErrorDisplay message={profileError || 'Profile not found'} />
-      </TwitterLayout>
+      </AppLayout>
     )
   }
 
   return (
-    <TwitterLayout>
+    <AppLayout>
       <Box>
         <ProfileHeader
           profile={profile}
@@ -310,7 +310,7 @@ export function ProfilePage() {
         onEditPostClose={() => setEditPost(null)}
         onDeletePostClose={() => setDeletePost(null)}
       />
-    </TwitterLayout>
+    </AppLayout>
   )
 }
 

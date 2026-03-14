@@ -44,7 +44,7 @@ const theme = createTheme({
   },
   spacing: 8,
   palette: {
-    primary: { main: COLORS.twitterBlue },
+    primary: { main: COLORS.primary },
     background: { default: COLORS.white },
     text: {
       primary: COLORS.textPrimary,

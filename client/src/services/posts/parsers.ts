@@ -7,7 +7,6 @@ import type { OrderedCollectionPage } from '../../types/activitypub'
 
 type OutboxActivity = (CreateActivity & { object: Note }) | { type: 'Announce'; actor: string; object: string; published: string }
 
-/** Get orderedItems from either a collection (first.orderedItems) or a page (orderedItems at root). Mastodon returns the page directly. */
 function getOutboxOrderedItems(response: OutboxResponse | OrderedCollectionPage): OutboxActivity[] {
   const page = response as OrderedCollectionPage
   if (Array.isArray(page.orderedItems)) return page.orderedItems as OutboxActivity[]

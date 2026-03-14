@@ -3,7 +3,7 @@ import { useParams, useSearchParams, useLocation } from 'react-router-dom'
 import { useProfileQuery } from './queries/useProfileQuery'
 import { useFollowersQuery } from './queries/useFollowersQuery'
 import { useFollowingQuery } from './queries/useFollowingQuery'
-import { useMastodonAccountCountsQuery } from './queries/useMastodonAccountCountsQuery'
+import { useRemoteAccountCountsQuery } from './queries/useRemoteAccountCountsQuery'
 import { resolveUrl } from '../services/posts/utils'
 import { useCurrentUserProfileQuery } from './queries/useCurrentUserProfileQuery'
 import type { OrderedCollection, OrderedCollectionPage } from '../types/activitypub'
@@ -47,7 +47,7 @@ export function useProfileDataQuery() {
     followingUrl
   )
 
-  const { data: mastodonCounts } = useMastodonAccountCountsQuery(
+  const { data: remoteCounts } = useRemoteAccountCountsQuery(
     profile?.id,
     isRemote && !!profile?.id
   )
@@ -152,37 +152,36 @@ export function useProfileDataQuery() {
       ? privatePlaceholder(followingUrl ?? '')
       : null)
 
-  // When list is private: still show count if we have one (e.g. Mastodon); when opened show "Private". When no count and private, show no number.
   const followers = followersRaw
     ? {
         ...followersRaw,
         totalItems: followersRaw._collectionPrivate
-          ? (mastodonCounts?.followers_count ?? undefined)
-          : (followersRaw.totalItems ?? mastodonCounts?.followers_count ?? 0),
+          ? (remoteCounts?.followers_count ?? undefined)
+          : (followersRaw.totalItems ?? remoteCounts?.followers_count ?? 0),
       }
-    : mastodonCounts
+    : remoteCounts
       ? ({
           '@context': ACTIVITY_STREAMS_CONTEXT,
           type: 'OrderedCollection',
           id: followersUrl ?? '',
           orderedItems: [],
-          totalItems: mastodonCounts.followers_count,
+          totalItems: remoteCounts.followers_count,
         } as OrderedCollection)
       : null
   const following = followingRaw
     ? {
         ...followingRaw,
         totalItems: followingRaw._collectionPrivate
-          ? (mastodonCounts?.following_count ?? undefined)
-          : (followingRaw.totalItems ?? mastodonCounts?.following_count ?? 0),
+          ? (remoteCounts?.following_count ?? undefined)
+          : (followingRaw.totalItems ?? remoteCounts?.following_count ?? 0),
       }
-    : mastodonCounts
+    : remoteCounts
       ? ({
           '@context': ACTIVITY_STREAMS_CONTEXT,
           type: 'OrderedCollection',
           id: followingUrl ?? '',
           orderedItems: [],
-          totalItems: mastodonCounts.following_count,
+          totalItems: remoteCounts.following_count,
         } as OrderedCollection)
       : null
 

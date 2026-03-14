@@ -2,11 +2,6 @@
 import { getLiked } from '../socials'
 export { fetchResource, isRemoteUrl } from '../proxy'
 
-/**
- * Resolves a possibly-relative URL against a base URL.
- * Remote servers (e.g. Mastodon) may return relative URLs for replies/likes;
- * without this, the client would request our own origin and get no data.
- */
 export function resolveUrl(url: string, baseUrl: string): string {
   if (!url || url.startsWith('http://') || url.startsWith('https://')) {
     return url
@@ -26,7 +21,6 @@ export function extractUsernameFromActorUrl(actorUrl: string): string | null {
     if (uIndex !== -1 && uIndex < pathParts.length - 1) {
       return pathParts[uIndex + 1]
     }
-    // Mastodon and others use /users/:username
     const usersIndex = pathParts.indexOf('users')
     if (usersIndex !== -1 && usersIndex < pathParts.length - 1) {
       return pathParts[usersIndex + 1]
@@ -45,7 +39,6 @@ export function extractFullHandleFromActorUrl(actorUrl: string): string | null {
     if (uIndex !== -1 && uIndex < pathParts.length - 1) {
       return `${pathParts[uIndex + 1]}@${url.hostname}`
     }
-    // Mastodon and others use /users/:username
     const usersIndex = pathParts.indexOf('users')
     if (usersIndex !== -1 && usersIndex < pathParts.length - 1) {
       return `${pathParts[usersIndex + 1]}@${url.hostname}`

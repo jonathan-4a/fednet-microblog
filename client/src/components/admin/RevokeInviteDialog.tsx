@@ -57,7 +57,7 @@ export function RevokeInviteDialog({
               fontSize: 13,
               py: 1,
               color: '#fff',
-              backgroundColor: COLORS.twitterRed,
+              backgroundColor: COLORS.danger,
               boxShadow: 'none',
               '&:hover': { backgroundColor: '#d91e2b', boxShadow: 'none' },
             }}

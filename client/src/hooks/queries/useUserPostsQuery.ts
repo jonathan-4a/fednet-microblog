@@ -68,10 +68,6 @@ export function useUserPostsQuery(
         outboxUrl = resolveUrl(outboxUrl, profile.id)
       }
 
-      // First page: fetch collection and parse posts
-      // Don't pass page parameter - let the server return the base collection
-      // Remote servers (Mastodon) will return first as a URL to fetch
-      // Local servers will return first as an embedded object
       if (!pageParam) {
         return await getUserPosts(actorUsername, {
           limit: 20,

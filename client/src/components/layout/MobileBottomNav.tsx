@@ -121,7 +121,7 @@ export function MobileBottomNav() {
             icon={
               <Badge
                 badgeContent={notificationUnreadCount > 0 ? notificationUnreadCount : undefined}
-                sx={{ '& .MuiBadge-badge': { backgroundColor: COLORS.twitterRed, color: COLORS.white } }}
+                sx={{ '& .MuiBadge-badge': { backgroundColor: COLORS.danger, color: COLORS.white } }}
               >
                 <NotificationsIcon />
               </Badge>

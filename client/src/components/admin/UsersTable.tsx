@@ -1,4 +1,5 @@
 // src/components/admin/UsersTable.tsx
+import { Link } from 'react-router-dom'
 import {
   Box,
   Table,
@@ -62,7 +63,23 @@ export function UsersTable({ users, onToggleActive, onDelete }: UsersTableProps)
           ) : (
             users.map((user) => (
               <TableRow key={user.username} sx={{ '&:hover': { backgroundColor: RGBA_COLORS.lightHover } }}>
-                <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.username}</TableCell>
+                <TableCell sx={{ fontSize: 14, py: 1.5 }}>
+                  {user.username.includes('://') ? (
+                    <Link
+                      to={`/profile/remote?url=${encodeURIComponent(user.username)}`}
+                      style={{ color: 'inherit', fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      {user.username}
+                    </Link>
+                  ) : (
+                    <Link
+                      to={`/profile/${user.username}`}
+                      style={{ color: 'inherit', fontWeight: 600, textDecoration: 'none' }}
+                    >
+                      {user.username}
+                    </Link>
+                  )}
+                </TableCell>
                 <TableCell sx={{ fontSize: 14, py: 1.5 }}>{user.display_name || '-'}</TableCell>
                 <TableCell sx={{ py: 1 }}>
                   <Switch
@@ -80,8 +97,8 @@ export function UsersTable({ users, onToggleActive, onDelete }: UsersTableProps)
                     size='small'
                     onClick={() => onDelete(user.username)}
                     sx={{
-                      color: COLORS.twitterRed,
-                      borderColor: COLORS.twitterRed,
+                      color: COLORS.danger,
+                      borderColor: COLORS.danger,
                       textTransform: 'none',
                       fontSize: 13,
                       fontWeight: 600,
@@ -91,7 +108,7 @@ export function UsersTable({ users, onToggleActive, onDelete }: UsersTableProps)
                       minWidth: 56,
                       boxShadow: 'none',
                       '&:hover': {
-                        borderColor: COLORS.twitterRed,
+                        borderColor: COLORS.danger,
                         backgroundColor: RGBA_COLORS.redMedium,
                         boxShadow: 'none',
                       },

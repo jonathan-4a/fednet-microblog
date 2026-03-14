@@ -1,9 +1,7 @@
-// src/services/mastodonProfile.ts
-// Mastodon API for profile counts when ActivityPub actor is incomplete or collections 401
 import { fetchResource } from './proxy'
 import { isRemoteUrl } from './proxy'
 
-interface MastodonAccount {
+interface RemoteAccount {
   id: string
   username: string
   display_name?: string
@@ -15,7 +13,6 @@ interface MastodonAccount {
   note?: string
 }
 
-/** Extract origin and acct from actor URL */
 function actorUrlToAcct(actorUrl: string): { origin: string; acct: string } | null {
   try {
     const url = new URL(actorUrl)
@@ -39,15 +36,14 @@ function actorUrlToAcct(actorUrl: string): { origin: string; acct: string } | nu
   }
 }
 
-/** Fetch Mastodon account for counts (followers, following, statuses). Use when ActivityPub actor lacks this data. */
-export async function getMastodonAccountByActorUrl(
+export async function getRemoteAccountCountsByActorUrl(
   actorUrl: string
 ): Promise<{ followers_count: number; following_count: number; statuses_count: number } | null> {
   const parsed = actorUrlToAcct(actorUrl)
   if (!parsed || !isRemoteUrl(actorUrl)) return null
 
   try {
-    const account = await fetchResource<MastodonAccount>(
+    const account = await fetchResource<RemoteAccount>(
       `${parsed.origin}/api/v1/accounts/lookup?acct=${encodeURIComponent(parsed.acct)}`,
       { acceptHeader: 'application/json' }
     )

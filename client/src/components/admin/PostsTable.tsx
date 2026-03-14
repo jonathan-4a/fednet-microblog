@@ -1,4 +1,5 @@
 // src/components/admin/PostsTable.tsx
+import { Link } from 'react-router-dom'
 import {
   Box,
   Table,
@@ -15,6 +16,13 @@ import { BORDER_RADIUS, COLORS, RGBA_COLORS } from '../../constants/theme'
 interface PostsTableProps {
   posts: AdminPostSummary[]
   onDelete: (guid: string) => void
+}
+
+function postDetailTo(post: AdminPostSummary): string {
+  if (post.author_username.includes('://')) {
+    return `/post?url=${encodeURIComponent(`${post.author_username.replace(/\/$/, '')}/statuses/${post.guid}`)}`
+  }
+  return `/post/${encodeURIComponent(post.author_username)}/${post.guid}`
 }
 
 export function PostsTable({ posts, onDelete }: PostsTableProps) {
@@ -60,7 +68,12 @@ export function PostsTable({ posts, onDelete }: PostsTableProps) {
               <TableRow key={post.guid} sx={{ '&:hover': { backgroundColor: RGBA_COLORS.lightHover } }}>
                 <TableCell sx={{ fontSize: 14, py: 1.5 }}>{post.author_username}</TableCell>
                 <TableCell sx={{ fontSize: 14, py: 1.5 }}>
-                  {post.content.length > 50 ? `${post.content.substring(0, 50)}...` : post.content}
+                  <Link
+                    to={postDetailTo(post)}
+                    style={{ color: 'inherit', textDecoration: 'none' }}
+                  >
+                    {post.content.length > 50 ? `${post.content.substring(0, 50)}...` : post.content}
+                  </Link>
                 </TableCell>
                 <TableCell sx={{ fontSize: 14, py: 1.5 }}>{formatDate(post.created_at)}</TableCell>
                 <TableCell sx={{ py: 1 }}>
@@ -69,8 +82,8 @@ export function PostsTable({ posts, onDelete }: PostsTableProps) {
                     size='small'
                     onClick={() => onDelete(post.guid)}
                     sx={{
-                      color: COLORS.twitterRed,
-                      borderColor: COLORS.twitterRed,
+                      color: COLORS.danger,
+                      borderColor: COLORS.danger,
                       textTransform: 'none',
                       fontSize: 13,
                       fontWeight: 600,
@@ -80,7 +93,7 @@ export function PostsTable({ posts, onDelete }: PostsTableProps) {
                       minWidth: 56,
                       boxShadow: 'none',
                       '&:hover': {
-                        borderColor: COLORS.twitterRed,
+                        borderColor: COLORS.danger,
                         backgroundColor: RGBA_COLORS.redMedium,
                         boxShadow: 'none',
                       },

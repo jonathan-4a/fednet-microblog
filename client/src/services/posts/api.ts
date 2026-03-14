@@ -40,8 +40,6 @@ export async function getPostReplies(
   params?: { page?: number; limit?: number }
 ): Promise<OrderedCollection> {
   const queryParams = new URLSearchParams()
-  // Mastodon uses ?page=true format, ActivityPub spec uses ?page=1
-  // For Mastodon compatibility, if page is 1, use ?page=true
   if (params?.page !== undefined) {
     if (params.page === 1) {
       queryParams.append('page', 'true')
@@ -225,7 +223,6 @@ export async function getPostDetails(
     const post = transformNoteToPostDetail(note, noteIdUrl, likedPostIds, actor)
     if (!post) return null
 
-    // Fetch replies collection to get accurate count (Mastodon doesn't include totalItems in Note)
     const repliesObj = note.replies as { id?: string; totalItems?: number; first?: OrderedCollectionPage | string } | undefined
     if (repliesObj?.id) {
       try {
@@ -233,7 +230,6 @@ export async function getPostDetails(
         if (repliesCollection.totalItems !== undefined) {
           post.repliesCount = repliesCollection.totalItems
         } else {
-          // Mastodon doesn't provide totalItems, count items from pages
           let totalCount = 0
           let currentPage: OrderedCollectionPage | null = null
           
@@ -249,8 +245,6 @@ export async function getPostDetails(
             const items = (currentPage.orderedItems || currentPage.items || []) as unknown[]
             totalCount += items.length
             
-            // If first page is empty but has next, fetch next page (Mastodon pattern)
-            // Mastodon uses only_other_accounts=true for replies from other accounts
             if (items.length === 0 && currentPage.next && typeof currentPage.next === 'string') {
               try {
                 const nextPage = await fetchResource<OrderedCollectionPage>(currentPage.next)
@@ -311,7 +305,6 @@ export async function getPostRepliesDetails(
   totalItems: number
   next?: string | null
 }> {
-  // Base URL for resolving relative URLs from remote servers (e.g. Mastodon)
   const baseUrl = noteIdUrl
   const repliesId = `${noteIdUrl}/replies`
   const emptyReplies: OrderedCollection = {
@@ -388,7 +381,6 @@ export async function getPostRepliesDetails(
       }
     } else {
       // No replies in Note - use getPostReplies only for local or /statuses/ URLs.
-      // Remote /objects/... URLs (Mastodon/LitePub) often don't serve replies at /objects/.../replies and return HTML.
       if (noteIdUrl.includes('/objects/')) {
         repliesCollection = emptyReplies
       } else {
@@ -414,10 +406,8 @@ export async function getPostRepliesDetails(
     }
   }
 
-  // Handle both embedded first page object and URL string (Mastodon format)
   let firstPage: OrderedCollectionPage | null = null
   if (typeof repliesCollection.first === 'string') {
-    // Mastodon returns first as a URL string - resolve if relative, then fetch
     const firstPageUrl = resolveUrl(repliesCollection.first, baseUrl)
     try {
       firstPage = await fetchResource<OrderedCollectionPage>(firstPageUrl)
@@ -425,8 +415,6 @@ export async function getPostRepliesDetails(
       firstPage = null
     }
   } else if (typeof repliesCollection.first === 'object' && repliesCollection.first) {
-    // Check if first page object has an 'id' field (Mastodon format)
-    // If it does and items is empty, fetch the URL to get the actual page
     const firstObj = repliesCollection.first as OrderedCollectionPage
     if (firstObj.id && typeof firstObj.id === 'string' && (!firstObj.items || firstObj.items.length === 0) && (!firstObj.orderedItems || firstObj.orderedItems.length === 0)) {
       try {
@@ -440,13 +428,9 @@ export async function getPostRepliesDetails(
     }
   }
 
-  // Mastodon uses 'items', ActivityPub spec uses 'orderedItems'
-  // Mastodon may embed full Note objects in items array, or just URLs
   let replyItems = (firstPage?.orderedItems || firstPage?.items || []) as (string | Note)[]
   let nextPageUrl: string | null = null
-  
-  // If first page has no items but has a 'next' URL (Mastodon's only_other_accounts page),
-  // fetch that to get replies from other accounts
+
   if (replyItems.length === 0 && firstPage?.next && typeof firstPage.next === 'string') {
     try {
       const nextPageUrlResolved = resolveUrl(firstPage.next, baseUrl)

@@ -10,7 +10,7 @@ import type { Post } from '../../types/posts'
 import { getOutbox } from '../federation'
 import { fetchResource, fetchLikedPostIds, processInBatches } from './utils'
 import { parseOutboxReplies, parseOutboxPageItems } from './parsers'
-import { getPostsViaMastodonApi, getPostsViaMastodonApiPage, isMastodonCompatibleOutbox, isMastodonStatusesUrl } from './mastodonApi'
+import { getPostsViaCompatibleApi, getPostsViaCompatibleApiPage, isCompatibleOutbox, isCompatibleStatusesUrl } from './compatibleApi'
 
 export async function getUserPosts(
   username: string,
@@ -51,10 +51,8 @@ export async function getUserPosts(
     if (err && typeof err === 'object' && err.status === 403) {
       return { posts: [], replies: [], private: true }
     }
-    // Akkoma/Pleroma require HTTP signatures for outbox; keyId points to localhost so remote rejects with 401.
-    // Fall back to Mastodon API which works without signing. Mastodon (mas.to etc) ActivityPub works, so try it first.
-    if (err && typeof err === 'object' && err.status === 401 && isMastodonCompatibleOutbox(outboxUrl)) {
-      return getPostsViaMastodonApi(outboxUrl, {
+    if (err && typeof err === 'object' && err.status === 401 && isCompatibleOutbox(outboxUrl)) {
+      return getPostsViaCompatibleApi(outboxUrl, {
         limit: params?.limit ?? 20,
         currentUsername: params?.currentUsername,
         likedPostIds,
@@ -121,8 +119,6 @@ export async function getUserPosts(
   const pageForReplies = { orderedItems } as unknown as OutboxResponse
   const replies = parseOutboxReplies(pageForReplies, effectiveUsername, likedPostIds)
 
-  // Fetch replies counts for remote posts (Mastodon doesn't include totalItems in Note)
-  // Use raw_message from post if available to avoid refetching
   posts = await processInBatches(
     posts,
     async (post: Post) => {
@@ -238,9 +234,8 @@ export async function getPostCollectionPage(
     ? await fetchLikedPostIds(`${API_BASE}/u/${params.currentUsername}/liked`)
     : new Set<string>()
 
-  // Mastodon API pagination (max_id in URL from Link header)
-  if (isMastodonStatusesUrl(pageUrl) && params?.outboxUrl) {
-    const result = await getPostsViaMastodonApiPage(pageUrl, {
+  if (isCompatibleStatusesUrl(pageUrl) && params?.outboxUrl) {
+    const result = await getPostsViaCompatibleApiPage(pageUrl, {
       currentUsername: params.currentUsername,
       likedPostIds,
     })
@@ -316,8 +311,8 @@ export async function getUserReplies(
     })) as OutboxResponse | OrderedCollection
   } catch (e) {
     const err = e as { status?: number }
-    if (err && typeof err === 'object' && err.status === 401 && isMastodonCompatibleOutbox(outboxUrl)) {
-      const { replies: replyPosts } = await getPostsViaMastodonApi(outboxUrl, {
+    if (err && typeof err === 'object' && err.status === 401 && isCompatibleOutbox(outboxUrl)) {
+      const { replies: replyPosts } = await getPostsViaCompatibleApi(outboxUrl, {
         limit: params?.limit ?? 50,
         currentUsername: params?.currentUsername,
         likedPostIds,
@@ -332,8 +327,6 @@ export async function getUserReplies(
     throw e
   }
 
-  // Mastodon with ?limit=50 returns OrderedCollection with first as URL string (no items at root).
-  // We must fetch the first page to get orderedItems; otherwise we get 0 replies.
   let collectionTotalItems: number | undefined
   let next: string | null = null
   const coll = response as OrderedCollection & { first?: string | OrderedCollectionPage }
@@ -355,7 +348,6 @@ export async function getUserReplies(
 
   const posts = parseOutboxReplies(response as OutboxResponse, username, likedPostIds)
 
-  // totalItems: collection has it; page may not (Mastodon returns page directly)
   const totalItems =
     collectionTotalItems ??
     (response as OutboxResponse & { totalItems?: number }).totalItems ??
