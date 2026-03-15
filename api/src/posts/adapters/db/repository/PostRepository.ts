@@ -57,7 +57,7 @@ export class PostRepository<TDB extends DB = DB> implements IPostRepository {
     ];
 
     if (normalized.startsWith("http://") && !normalized.includes(":80")) {
-      const match = normalized.match(/^http:\/\/([^\/]+)(\/.*)$/);
+      const match = normalized.match(/^http:\/\/([^/]+)(\/.*)$/);
       if (match) {
         conditions.push(
           eb("in_reply_to", "=", `http://${match[1]}:80${match[2]}`),

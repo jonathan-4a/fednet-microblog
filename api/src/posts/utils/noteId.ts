@@ -2,7 +2,7 @@ export function normalizeNoteIdUrl(url: string): string {
   let normalized = url;
 
   if (normalized.includes("#") && normalized.includes("/u/")) {
-    const match = normalized.match(/^(https?:\/\/[^\/]+)\/u\/([^#]+)#(.+)$/);
+    const match = normalized.match(/^(https?:\/\/[^/]+)\/u\/([^#]+)#(.+)$/);
     if (match) {
       const [, baseUrl, username, guid] = match;
       normalized = `${baseUrl}/u/${username}/statuses/${guid}`;
