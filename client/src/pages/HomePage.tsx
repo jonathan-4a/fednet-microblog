@@ -3,7 +3,6 @@ import { Box, Typography } from '@mui/material'
 import { AppLayout } from '../components/layout/AppLayout'
 import { useAuthStore } from '../stores/authStore'
 import { PostList } from '../components/post/PostList'
-import { useHomeFeedQuery } from '../hooks/queries/useHomeFeedQuery'
 import { usePostInteractions } from '../hooks/usePostInteractions'
 
 export function HomePage() {
@@ -12,23 +11,7 @@ export function HomePage() {
 
   const { handleLike } = usePostInteractions(username)
 
-  const {
-    data,
-    isLoading,
-    error,
-    hasNextPage,
-    fetchNextPage,
-    isFetchingNextPage,
-  } = useHomeFeedQuery(username, {
-    maxDepth: 4,
-    maxUsers: 50,
-    postsPerUserLimit: 20,
-    maxPosts: 200,
-    includeSelf: false,
-    edgeDirection: 'both',
-  })
-
-  const feedItems = data?.pages.flatMap((page) => page.items) ?? []
+  const feedItems: never[] = []
 
   return (
     <AppLayout>
@@ -49,18 +32,13 @@ export function HomePage() {
       <Box sx={{ p: 0 }}>
         <PostList
           posts={feedItems}
-          loading={isLoading || !username}
+          loading={!username}
           error={
             !username
               ? 'You must be logged in to see your home feed.'
-              : error
-              ? error.message
               : null
           }
           onLike={handleLike}
-          hasNextPage={hasNextPage}
-          fetchNextPage={hasNextPage ? fetchNextPage : undefined}
-          isFetchingNextPage={isFetchingNextPage}
         />
       </Box>
     </AppLayout>

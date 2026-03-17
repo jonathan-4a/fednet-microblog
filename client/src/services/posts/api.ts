@@ -25,6 +25,7 @@ import {
   processInBatches,
   resolveUrl,
 } from './utils'
+import { getLiked } from '../socials'
 import { getActor } from '../federation'
 import { transformNoteToPostDetail } from './transformers'
 import type { Actor } from '../../types/activitypub'
@@ -624,7 +625,6 @@ export async function getLikedPostsForUser(
   posts: Post[]
   totalItems: number
 }> {
-  const { getLiked } = await import('../socials')
   const likedCollection = await getLiked(likedUrl)
   if (!likedCollection) {
     return { posts: [], totalItems: 0 }
