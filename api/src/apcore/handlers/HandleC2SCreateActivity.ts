@@ -56,6 +56,9 @@ export class HandleC2SCreateActivity {
         ? activity.actor
         : `${protocol}://${host}/u/${username}`;
 
+    const noteIdFromClient =
+      typeof note.id === "string" && note.id ? note.id : undefined;
+
     const inReplyToAuthorActor = getInReplyToAuthorActor(activity);
     const isRemoteReply =
       inReplyToAuthorActor !== null &&
@@ -71,6 +74,7 @@ export class HandleC2SCreateActivity {
       host,
       protocol,
       actor: actorUrl,
+      noteId: noteIdFromClient,
     });
   }
 }

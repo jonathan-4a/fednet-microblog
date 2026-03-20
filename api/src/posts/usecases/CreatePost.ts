@@ -35,7 +35,12 @@ export class CreatePost implements ICreatePost {
       throw new PostValidationError("Content is required");
     }
 
-    const finalGuid = guid || this.idGenerator.generate();
+    let finalGuid = guid;
+    if (!finalGuid && noteId) {
+      const m = noteId.match(/\/statuses\/([^/?#]+)$/);
+      if (m) finalGuid = decodeURIComponent(m[1]);
+    }
+    if (!finalGuid) finalGuid = this.idGenerator.generate();
     const createdAt = Math.floor(Date.now() / 1000);
     const finalNoteId =
       noteId || `${protocol}://${host}/u/${username}/statuses/${finalGuid}`;

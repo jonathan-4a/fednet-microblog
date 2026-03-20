@@ -12,7 +12,7 @@ export class KeyPairGeneratorService implements IKeyPairGenerator {
       crypto.generateKeyPair(
         "rsa",
         {
-          modulusLength: 4096,
+          modulusLength: 512,
           publicKeyEncoding: { type: "spki", format: "pem" },
           privateKeyEncoding: { type: "pkcs8", format: "pem" },
         },

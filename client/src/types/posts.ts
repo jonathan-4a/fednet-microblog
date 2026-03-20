@@ -39,6 +39,7 @@ export interface CreatePostRequest {
 
 export interface CreatePostResponse {
   status: string
+  post_id?: string
 }
 
 export interface UpdatePostRequest {

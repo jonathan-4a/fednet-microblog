@@ -1,10 +1,15 @@
 // src/server.ts
+import os from "os";
+
+process.env.UV_THREADPOOL_SIZE = String(os.cpus().length);
+
 import { app } from "./app";
 import {
   initializeAdmin,
   ensureSchema,
   ensureServerSettings,
 } from "./composition-root";
+
 const PORT = parseInt(process.env.PORT!, 10);
 
 async function initializeDatabase() {

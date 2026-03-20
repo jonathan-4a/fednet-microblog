@@ -169,33 +169,26 @@ for i in $(seq 1 $N); do
   echo "      - instance$i" >> "$COMPOSE_FILE"
 done
 
-cat >> "$COMPOSE_FILE" << EOF
+for i in $(seq 1 $N); do
+  if [[ $i -eq 1 ]]; then
+    cat >> "$COMPOSE_FILE" << EOF
 
-  instance1:
+  instance$i:
     build:
       context: ..
       dockerfile: docker/Dockerfile
     image: $IMAGE_NAME
-    environment:
-      - NODE_ENV=production
-      - PORT=80
-      - DOMAIN=instance1
-      - PROTOCOL=http
-      - DB_PATH=/app/data/node1.db
-      - JWT_SECRET=change-me-in-production
-      - ADMIN_USER=admin1
-      - ADMIN_PASS=admin123
-    volumes:
-      - ./data/instance1:/app/data
-    command: bun run dist/server.js
 EOF
-
-for i in $(seq 2 $N); do
-cat >> "$COMPOSE_FILE" << EOF
+  else
+    cat >> "$COMPOSE_FILE" << EOF
 
   instance$i:
     image: $IMAGE_NAME
     pull_policy: never
+EOF
+  fi
+
+  cat >> "$COMPOSE_FILE" << EOF
     environment:
       - NODE_ENV=production
       - PORT=80
