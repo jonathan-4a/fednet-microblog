@@ -29,7 +29,6 @@ export interface DbTables {
 }
 
 export async function ensureSchema(db: Kysely<DbTables>): Promise<void> {
-  await sql`PRAGMA foreign_keys = ON`.execute(db);
   await createUserSchema<DbTables>(db);
   await createCredentialsSchema<DbTables>(db);
   await createTokenBlacklistSchema<DbTables>(db);

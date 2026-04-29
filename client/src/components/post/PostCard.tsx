@@ -60,14 +60,12 @@ export function PostCard({
 
   const displayAuthorUsername = post.author_username || authorUsername
 
-  // Use post's author_name if available, otherwise use prop if it matches, otherwise extract username from handle
+  // Prefer explicit display name from props (e.g. profile), then author_name from post (from Actor.name),
+  // then fall back to the username part before any @ handle.
   const displayAuthorName =
+    authorDisplayName ||
     post.author_name ||
-    (post.author_username &&
-    authorUsername === post.author_username &&
-    authorDisplayName
-      ? authorDisplayName
-      : (displayAuthorUsername || '').split('@')[0])
+    (displayAuthorUsername || '').split('@')[0]
 
   // Check if current user owns this post
   // Compare both displayAuthorUsername and post.author_username to handle edge cases

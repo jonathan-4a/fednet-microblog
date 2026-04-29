@@ -23,6 +23,26 @@ scripts/
 /api/public/assets/
 /api/public/index.html
 /api/docker/data/
+/api/docker/docker-compose.yml
+/api/docker/nginx.conf
 /api/node.db
 /api/*.db
 /api/logs/
+
+# -----------------
+# Seeder
+# -----------------
+/seeder/network.pkl
+/seeder/network.gexf
+/seeder/labeled_posts.csv
+/seeder/embeddings_cache.npz
+/seeder/results/
+.venv/
+venv/
+__pycache__/
+
+# -----------------
+# Generated figures
+# -----------------
+/figures/
+
